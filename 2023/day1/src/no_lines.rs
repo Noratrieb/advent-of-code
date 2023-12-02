@@ -34,6 +34,8 @@ pub unsafe fn part2(input: &str) {
             sum += first * 10 + last;
             digits = [0_u8; 128];
             line_idx = 0;
+            byte_idx += 1;
+            continue;
         }
 
         const fn gorble(s: &[u8]) -> u64 {
