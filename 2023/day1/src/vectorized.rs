@@ -48,7 +48,7 @@ pub unsafe fn part2(input: &str) {
             continue;
         }
 
-        const fn gorble(s: &[u8]) -> u64 {
+        fn gorble(s: &[u8]) -> u64 {
             let mut bytes = [0; 8];
             let mut i = 0;
             while i < s.len() {
@@ -61,21 +61,22 @@ pub unsafe fn part2(input: &str) {
 
         let mut acc = 0;
 
-
         acc |= if one >= b'0' && one <= b'9' { one } else { 0 };
+
+        let mut vector_result = None;
 
         #[cfg(all(target_arch = "x86_64"))]
         if avx2 {
             use std::arch::x86_64;
             unsafe fn round(input: u64, compare: [u64; 4], then: [u64; 4]) -> x86_64::__m256i {
                 // YYYYYYYY|AAAAAAAA|XXXXXXXX|BBBBBBBB|
-                let fives = unsafe { std::mem::transmute::<_, x86_64::__m256i>(compare) };
+                let compare = unsafe { std::mem::transmute::<_, x86_64::__m256i>(compare) };
                 // 000000EE|000000ZZ|000000XX|000000FF|
                 let then = unsafe { std::mem::transmute::<_, x86_64::__m256i>(then) };
                 // XXXXXXXX|XXXXXXXX|XXXXXXXX|XXXXXXXX|
                 let actual = x86_64::_mm256_set1_epi64x(input as i64);
                 // 00000000|00000000|11111111|00000000|
-                let mask = x86_64::_mm256_cmpeq_epi64(fives, actual);
+                let mask = x86_64::_mm256_cmpeq_epi64(compare, actual);
                 // 00000000|00000000|0000000X|00000000|
                 let result = x86_64::_mm256_and_si256(then, mask);
                 // we can also pretend that it's this as only the lowest byte is set in each lane
@@ -99,8 +100,8 @@ pub unsafe fn part2(input: &str) {
                 [b'6' as _, b'2' as _, b'1' as _, 0],
             );
 
-
-            let result = x86_64::_mm256_or_pd(std::mem::transmute(fives), std::mem::transmute(fours));
+            let result =
+                x86_64::_mm256_or_pd(std::mem::transmute(fives), std::mem::transmute(fours));
             let result = x86_64::_mm256_or_pd(result, std::mem::transmute(threes));
 
             let low = x86_64::_mm256_extractf128_pd(result, 0);
@@ -114,29 +115,37 @@ pub unsafe fn part2(input: &str) {
 
             digits[line_idx] = acc | result as u8;
 
+            if cfg!(debug_assertions) {
+                vector_result = Some(acc | result as u8);
+            }
         }
 
-        if !avx2 {
+        if cfg!(debug_assertions) || !avx2 {
             macro_rules! check {
-                ($const:ident $len:ident == $str:expr => $value:expr) => {
-                    const $const: u64 = gorble($str);
-                    acc |= (if $len == $const { $value } else { 0 });
+                ($len:ident == $str:expr => $value:expr) => {
+                    acc |= (if $len == gorble($str) { $value } else { 0 });
                 };
             }
-    
-            check!(EIGHT five == b"eight" => b'8');
-            check!(SEVEN five == b"seven" => b'7');
-            check!(THREE five == b"three" => b'3');
 
-            check!(FIVE four == b"five" => b'5');
-            check!(FOUR four == b"four" => b'4');
-            check!(NINE four == b"nine" => b'9');
+            check!(five == b"eight" => b'8');
+            check!(five == b"seven" => b'7');
+            check!(five == b"three" => b'3');
 
-            check!(SIX three == b"six" => b'6');
-            check!(TWO three == b"two" => b'2');
-            check!(ONE three == b"one" => b'1');
+            check!(four == b"five" => b'5');
+            check!(four == b"four" => b'4');
+            check!(four == b"nine" => b'9');
+
+            check!(three == b"six" => b'6');
+            check!(three == b"two" => b'2');
+            check!(three == b"one" => b'1');
 
             digits[line_idx] = acc;
+
+            if cfg!(debug_assertions) {
+                if let Some(vector_result) = vector_result {
+                    assert_eq!(vector_result, acc);
+                }
+            }
         }
 
         byte_idx += 1;
