@@ -3,6 +3,7 @@ use std::mem::MaybeUninit;
 mod branchless;
 mod naive;
 mod no_lines;
+mod vectorized;
 mod zero_alloc;
 
 fn main() {
@@ -24,6 +25,7 @@ fn main() {
         "zero_alloc" => zero_alloc::part2(&input),
         "branchless" => unsafe { branchless::part2(&input) },
         "no_lines" => unsafe { no_lines::part2(&input) },
+        "vectorized" => unsafe { vectorized::part2(&input) },
         _ => {
             eprintln!("error: invalid mode, must be part1,naive,zero_alloc,branchless");
             std::process::exit(1);
