@@ -48,16 +48,17 @@ pub unsafe fn part2(input: &str) {
             // like: u64::from_be_bytes([0, 0, 0, b't', b'h', b'g', b'i', b'e'])
             u64::from_be_bytes(bytes)
         }
+
+        let mut acc = 0;
+
         macro_rules! check {
             ($const:ident $len:ident == $str:expr => $value:expr) => {
                 const $const: u64 = gorble($str);
-                digits[line_idx] |= (if $len == $const { $value } else { 0 });
+                acc |= (if $len == $const { $value } else { 0 });
             };
         }
-        
-        assert!(line_idx < digits.len());
 
-        digits[line_idx] |= if one >= b'0' && one <= b'9' { one } else { 0 };
+        acc |= if one >= b'0' && one <= b'9' { one } else { 0 };
 
         check!(EIGHT five == b"eight" => b'8');
         check!(SEVEN five == b"seven" => b'7');
@@ -70,6 +71,8 @@ pub unsafe fn part2(input: &str) {
         check!(SIX three == b"six" => b'6');
         check!(TWO three == b"two" => b'2');
         check!(ONE three == b"one" => b'1');
+
+        digits[line_idx] = acc;
 
         byte_idx += 1;
         line_idx += 1;
