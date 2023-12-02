@@ -9,7 +9,7 @@ fn main() {
 
     let mut input = std::hint::black_box(include_str!("../input.txt")).to_owned();
 
-    input.reserve(5);
+    input.reserve(10); // enough to read u64
     unsafe {
         input
             .as_mut_vec()

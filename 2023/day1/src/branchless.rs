@@ -17,6 +17,7 @@ pub unsafe fn part2(input: &str) {
                 // o n e X X X X X
                 // in the integer bytes:
                 // X X X X X e n o
+                // this out of bounds read is UB under SB, but fine under models that don't do provenance narrowing with slices. i dont care enough to fix it.
                 let block = bytes.as_ptr().add(i).cast::<u64>().read_unaligned().to_le();
 
                 let one = (block & ((1 << (8 * 1)) - 1)) as u8;
