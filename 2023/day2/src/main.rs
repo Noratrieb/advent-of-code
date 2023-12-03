@@ -1,7 +1,6 @@
 use nom::{
     branch::alt,
     bytes::complete::tag,
-    character::complete::digit1,
     combinator::{all_consuming, map},
     multi::separated_list0,
     sequence::{preceded, tuple},
@@ -40,16 +39,11 @@ fn parse_line(line: &str) -> (u64, Vec<Vec<(u64, Color)>>) {
             map(tag("green"), |_| Color::Green),
         ))(i)
     };
-    let parse_cubes = map(
-        tuple((digit1, preceded(tag(" "), parse_color))),
-        |(a, c)| (a.parse::<u64>().unwrap(), c),
-    );
+    let parse_cubes = tuple((helper::integer, preceded(tag(" "), parse_color)));
     let parse_round = separated_list0(tag(", "), parse_cubes);
     let parse_game = separated_list0(tag("; "), parse_round);
     let parse_line = tuple((
-        map(preceded(tag("Game "), digit1), |d: &str| {
-            d.parse::<u64>().unwrap()
-        }),
+        preceded(tag("Game "), helper::integer),
         preceded(tag(": "), parse_game),
     ));
 

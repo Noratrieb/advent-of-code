@@ -13,12 +13,16 @@ dependencies = [
 name = "day2"
 version = "0.1.0"
 dependencies = [
+ "helper",
  "nom",
 ]
 
 [[package]]
 name = "helper"
 version = "0.1.0"
+dependencies = [
+ "nom",
+]
 
 [[package]]
 name = "memchr"
