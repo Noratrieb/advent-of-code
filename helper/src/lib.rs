@@ -104,7 +104,7 @@ macro_rules! construct_variants {
 #[macro_export]
 macro_rules! benchmarks {
     () => {
-        #[::divan::bench_group(sample_count = 1_000)]
+        #[::divan::bench_group(sample_count = 10_000)]
         mod bench {
             mod part1 {
                 part1_variants! { _define_benchmarks }

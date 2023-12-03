@@ -1,5 +1,6 @@
-mod p2faster_hash;
 mod p2basic;
+mod p2faster_hash;
+mod p2less_alloc;
 
 use helper::Day;
 
@@ -16,7 +17,8 @@ helper::define_variants! {
     }
     part2 {
         basic => crate::p2basic::part2;
-        fasher_hash => crate::p2faster_hash::part2;
+        faster_hash => crate::p2faster_hash::part2;
+        less_alloc => crate::p2less_alloc::part2;
     }
 }
 
@@ -70,7 +72,6 @@ fn part1(input: &str) -> u64 {
 
     acc
 }
-
 
 helper::tests! {
     day03 Day03;
