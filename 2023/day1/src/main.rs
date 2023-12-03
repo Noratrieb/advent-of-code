@@ -1,5 +1,7 @@
 use std::mem::MaybeUninit;
 
+use helper::{Day, Variant, Variants};
+
 mod branchless;
 mod naive;
 mod no_lines;
@@ -30,10 +32,41 @@ fn main() {
             eprintln!("error: invalid mode, must be part1,naive,zero_alloc,branchless");
             std::process::exit(1);
         }
+    };
+}
+
+struct Day1;
+
+impl Day for Day1 {
+    fn pad_input(input: &str) -> std::borrow::Cow<str> {
+        let mut input = input.to_owned();
+        input.reserve(10); // enough to read u64
+        unsafe {
+            input
+                .as_mut_vec()
+                .spare_capacity_mut()
+                .fill(MaybeUninit::new(0))
+        };
+        std::borrow::Cow::Owned(input)
+    }
+    fn part1() -> Variants {
+        Variants::basic(part1)
+    }
+
+    fn part2() -> Variants {
+        Variants {
+            variants: vec![
+                Variant::new("naive", naive::part2),
+                Variant::new("zero_alloc", zero_alloc::part2),
+                Variant::new("branchless", |i| unsafe { branchless::part2(i) }),
+                Variant::new("no_lines", |i| unsafe { no_lines::part2(i) }),
+                Variant::new("vectorized", |i| unsafe { vectorized::part2(i) }),
+            ],
+        }
     }
 }
 
-fn part1(input: &str) {
+fn part1(input: &str) -> u64 {
     let sum = input
         .lines()
         .map(|line| {
@@ -49,5 +82,17 @@ fn part1(input: &str) {
         })
         .sum::<u64>();
 
-    println!("part1: {sum}");
+    sum
+}
+
+helper::tests! {
+    day1 Day1;
+    part1 {
+        "../input_small1.txt" => 142;
+        "../input.txt" => 54632;
+    }
+    part2 {
+        "../input_small2.txt" => 281;
+        "../input.txt" => 54019;
+    }
 }

@@ -1,4 +1,4 @@
-pub unsafe fn part2(input: &str) {
+pub unsafe fn part2(input: &str) -> u64 {
     let mut sum = 0;
 
     let bytes = input.as_bytes();
@@ -152,5 +152,5 @@ pub unsafe fn part2(input: &str) {
         line_idx += 1;
     }
 
-    println!("part2: {sum}");
+    sum
 }

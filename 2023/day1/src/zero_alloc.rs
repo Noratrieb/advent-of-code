@@ -1,4 +1,4 @@
-pub fn part2(input: &str) {
+pub fn part2(input: &str) -> u64 {
     let sum = input
         .lines()
         .map(|line| {
@@ -39,5 +39,5 @@ pub fn part2(input: &str) {
         })
         .sum::<u64>();
 
-    println!("part2: {sum}");
-}
+        sum
+    }

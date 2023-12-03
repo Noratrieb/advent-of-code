@@ -33,6 +33,12 @@ impl Variants {
     }
 }
 
+impl Variant {
+    pub fn new(name: &'static str, f: Solution) -> Self {
+        Self { name, f }
+    }
+}
+
 pub fn test_part1<D: Day>(inputs: &[(&str, u64)]) {
     for variant in D::part1().variants {
         for input in inputs {
@@ -68,21 +74,48 @@ macro_rules! tests {
             default => $p2default:expr;
         }
     ) => {
+        $crate::tests! {
+            $day_small $day;
+            part1 {
+                "../input_small.txt" => $p1small;
+                "../input.txt" => $p1default;
+            }
+            part2 {
+                "../input_small.txt" => $p2small;
+                "../input.txt" => $p2default;
+            }
+        }
+    };
+    (
+        $day_small:ident $day:ident;
+        part1 {
+            $(
+                $file1:literal => $p1:expr;
+            )*
+        }
+        part2 {
+            $(
+                $file2:literal => $p2:expr;
+            )*
+        }
+    ) => {
         #[cfg(test)]
         mod $day_small {
             #[test]
             fn part1() {
                 helper::test_part1::<super::$day>(&[
-                    (include_str!("../input_small.txt"), $p1small),
-                    (include_str!("../input.txt"), $p1default),
+                    $(
+                        (include_str!($file1), $p1),
+                    )*
                 ]);
             }
 
             #[test]
             fn part2() {
                 helper::test_part2::<super::$day>(&[
-                    (include_str!("../input_small.txt"), $p2small),
-                    (include_str!("../input.txt"), $p2default),
+                    $(
+                        (include_str!($file2), $p2),
+                    )*
                 ]);
             }
         }
