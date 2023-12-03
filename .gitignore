@@ -1,4 +1,4 @@
 target
-perf.data*
+perf.*
 aoc_cookie
 input_big.txt
