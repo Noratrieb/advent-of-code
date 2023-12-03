@@ -1,6 +1,6 @@
 mod cmd;
 
-use std::borrow::Cow;
+use std::{borrow::Cow, fmt::Debug};
 
 use nom::{character::complete::digit1, combinator::map, IResult};
 
@@ -25,6 +25,7 @@ pub struct Variants {
     pub variants: Vec<Variant>,
 }
 
+#[derive(Debug)]
 pub struct Variant {
     pub name: &'static str,
     pub f: Solution,

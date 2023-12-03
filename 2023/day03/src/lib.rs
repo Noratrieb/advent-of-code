@@ -1,7 +1,9 @@
 mod p2basic;
+mod p2bytes;
 mod p2faster_hash;
 mod p2less_alloc;
-mod p2less_with_capacity;
+mod p2less_branching;
+mod p2with_capacity;
 
 use helper::Day;
 
@@ -19,8 +21,10 @@ helper::define_variants! {
     part2 {
         basic => crate::p2basic::part2;
         faster_hash => crate::p2faster_hash::part2;
-        p2less_with_capacity => crate::p2less_with_capacity::part2;
+        with_capacity => crate::p2with_capacity::part2;
         less_alloc => crate::p2less_alloc::part2;
+        less_branching => crate::p2less_branching::part2;
+        bytes => crate::p2bytes::part2;
     }
 }
 
