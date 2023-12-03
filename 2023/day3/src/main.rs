@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use helper::{Day, Variants};
+
 fn main() {
     let kind = std::env::args().nth(1).unwrap_or("naive".into());
 
@@ -15,6 +17,18 @@ fn main() {
     };
 
     println!("result: {result}");
+}
+
+struct Day3;
+
+impl Day for Day3 {
+    fn part1() -> Variants {
+        Variants::basic(part1)
+    }
+
+    fn part2() -> Variants {
+        Variants::basic(part2)
+    }
 }
 
 fn part1(input: &str) -> u64 {
@@ -119,21 +133,20 @@ fn part2(input: &str) -> u64 {
 #[cfg(test)]
 mod tests {
     #[test]
-    fn part1_small() {
-        assert_eq!(super::part1(include_str!("../input_small.txt")), 4361);
-    }
-
-    #[test]
     fn part1() {
-        assert_eq!(super::part1(include_str!("../input.txt")), 537832);
+        helper::test_part1::<super::Day3>(&[
+            (include_str!("../input_small.txt"), 4361),
+            (include_str!("../input.txt"), 537832),
+        ]
+        );
     }
 
-    #[test]
-    fn part2_small() {
-        assert_eq!(super::part2(include_str!("../input_small.txt")), 467835);
-    }
     #[test]
     fn part2() {
-        assert_eq!(super::part2(include_str!("../input.txt")), 81939900);
+        helper::test_part2::<super::Day3>(&[
+            (include_str!("../input_small.txt"), 467835),
+            (include_str!("../input.txt"), 81939900),
+        ]
+        );
     }
 }

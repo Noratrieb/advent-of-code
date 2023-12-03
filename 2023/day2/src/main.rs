@@ -1,3 +1,4 @@
+use helper::{Day, Variants};
 use nom::{
     branch::alt,
     bytes::complete::tag,
@@ -22,6 +23,18 @@ fn main() {
     };
 
     println!("result: {result}");
+}
+
+struct Day4;
+
+impl Day for Day4 {
+    fn part1() -> helper::Variants {
+        Variants::basic(part1)
+    }
+
+    fn part2() -> helper::Variants {
+        Variants::basic(part2)
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -91,21 +104,20 @@ fn part2(input: &str) -> u64 {
 #[cfg(test)]
 mod tests {
     #[test]
-    fn part1_small() {
-        assert_eq!(super::part1(include_str!("../input_small.txt")), 8);
-    }
-
-    #[test]
     fn part1() {
-        assert_eq!(super::part1(include_str!("../input.txt")), 1931);
+        helper::test_part1::<super::Day4>(&[
+            (include_str!("../input_small.txt"), 8),
+            (include_str!("../input.txt"), 1931),
+        ]
+        );
     }
 
-    #[test]
-    fn part2_small() {
-        assert_eq!(super::part2(include_str!("../input_small.txt")), 2286);
-    }
     #[test]
     fn part2() {
-        assert_eq!(super::part2(include_str!("../input.txt")), 83105);
+        helper::test_part2::<super::Day4>(&[
+            (include_str!("../input_small.txt"), 2286),
+            (include_str!("../input.txt"), 83105),
+        ]
+        );
     }
 }
