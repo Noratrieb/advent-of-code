@@ -50,7 +50,7 @@ pub fn part2(input: &str) -> u64 {
     let mut prev2 = empty_border.as_str();
     let mut prev1 = input.lines().next().unwrap();
 
-    let mut gears: FxHashMap<u32, GearRatio> =
+    let mut gears: FxHashMap<u64, GearRatio> =
         FxHashMap::with_capacity_and_hasher(1000, BuildHasherDefault::default());
 
     for (line_number, next) in input
@@ -59,6 +59,7 @@ pub fn part2(input: &str) -> u64 {
         .chain(Some(empty_border.as_str()))
         .enumerate()
     {
+        assert!(line_number < u32::MAX as _);
         let mut numbers = prev1.char_indices().peekable();
         while let Some((start, c)) = numbers.next() {
             if c.is_ascii_digit() {
@@ -70,26 +71,23 @@ pub fn part2(input: &str) -> u64 {
                 let box_bounds = (start.saturating_sub(1))..std::cmp::min(end + 2, len);
                 let number = prev1[start..=end].parse::<u64>().unwrap();
 
-                let mut push = |key: (usize, usize)| {
+                let mut push = |line, pos| {
                     gears
-                        .entry(((key.1 as u32) << 16) | (key.0 as u32))
+                        .entry((((box_bounds.start + pos) as u64) << 32) | (line as u64))
                         .or_default()
                         .push(number)
                 };
 
                 if let Some(position) = contains_gear(&prev2[box_bounds.clone()]) {
-                    let key = (line_number - 1, box_bounds.start + position);
-                    push(key);
+                    push(line_number - 1, position);
                 }
 
                 if let Some(position) = contains_gear(&prev1[box_bounds.clone()]) {
-                    let key = (line_number, box_bounds.start + position);
-                    push(key);
+                    push(line_number, position);
                 }
 
                 if let Some(position) = contains_gear(&next[box_bounds.clone()]) {
-                    let key = (line_number + 1, box_bounds.start + position);
-                    push(key);
+                    push(line_number + 1, position);
                 }
             }
         }
