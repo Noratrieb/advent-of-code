@@ -39,5 +39,5 @@ pub fn part2(input: &str) -> u64 {
         })
         .sum::<u64>();
 
-        sum
-    }
+    sum
+}
