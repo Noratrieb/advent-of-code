@@ -1,6 +1,10 @@
 [workspace]
 resolver = "2"
-members = ["2023/*"]
+members = ["2023/*", "helper"]
 
 [profile.release]
 debug = 1
+
+[workspace.dependencies]
+helper = { path = "./helper" }
+nom = "7.1.3"
