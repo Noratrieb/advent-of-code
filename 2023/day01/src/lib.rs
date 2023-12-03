@@ -9,13 +9,13 @@ mod vectorized;
 mod zero_alloc;
 
 pub fn main() {
-    helper::main::<Day1>(include_str!("../input.txt"));
+    helper::main::<Day01>(include_str!("../input.txt"));
 }
 
-struct Day1;
+struct Day01;
 
 helper::define_variants! {
-    day => crate::Day1;
+    day => crate::Day01;
     part1 {
         basic => crate::part1;
     }
@@ -28,7 +28,7 @@ helper::define_variants! {
     }
 }
 
-impl Day for Day1 {
+impl Day for Day01 {
     fn pad_input(input: &str) -> std::borrow::Cow<str> {
         let mut input = input.to_owned();
         input.reserve(10); // enough to read u64
@@ -69,7 +69,7 @@ fn part1(input: &str) -> u64 {
 }
 
 helper::tests! {
-    day1 Day1;
+    day01 Day01;
     part1 {
         "../input_small1.txt" => 142;
         "../input.txt" => 54632;

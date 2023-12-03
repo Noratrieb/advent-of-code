@@ -3,13 +3,13 @@ use std::collections::HashMap;
 use helper::Day;
 
 pub fn main() {
-    helper::main::<Day3>(include_str!("../input.txt"));
+    helper::main::<Day03>(include_str!("../input.txt"));
 }
 
-struct Day3;
+struct Day03;
 
 helper::define_variants! {
-    day => crate::Day3;
+    day => crate::Day03;
     part1 {
         basic => crate::part1;
     }
@@ -18,7 +18,7 @@ helper::define_variants! {
     }
 }
 
-impl Day for Day3 {
+impl Day for Day03 {
     fn part1() -> helper::Variants {
         part1_variants!(construct_variants)
     }
@@ -128,7 +128,7 @@ fn part2(input: &str) -> u64 {
 }
 
 helper::tests! {
-    day3 Day3;
+    day03 Day03;
     part1 {
         small => 4361;
         default => 537832;

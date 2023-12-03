@@ -9,13 +9,13 @@ use nom::{
 };
 
 pub fn main() {
-    helper::main::<Day2>(include_str!("../input.txt"));
+    helper::main::<Day02>(include_str!("../input.txt"));
 }
 
-struct Day2;
+struct Day02;
 
 helper::define_variants! {
-    day => crate::Day2;
+    day => crate::Day02;
     part1 {
         basic => crate::part1;
     }
@@ -24,7 +24,7 @@ helper::define_variants! {
     }
 }
 
-impl Day for Day2 {
+impl Day for Day02 {
     fn part1() -> helper::Variants {
         part1_variants!(construct_variants)
     }
@@ -99,7 +99,7 @@ fn part2(input: &str) -> u64 {
 }
 
 helper::tests! {
-    day2 Day2;
+    day02 Day02;
     part1 {
         small => 8;
         default => 1931;
