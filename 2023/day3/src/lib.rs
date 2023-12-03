@@ -1,20 +1,30 @@
 use std::collections::HashMap;
 
-use helper::{Day, Variants};
+use helper::Day;
 
-fn main() {
+pub fn main() {
     helper::main::<Day3>(include_str!("../input.txt"));
 }
 
 struct Day3;
 
+helper::define_variants! {
+    day => crate::Day3;
+    part1 {
+        basic => crate::part1;
+    }
+    part2 {
+        basic => crate::part2;
+    }
+}
+
 impl Day for Day3 {
-    fn part1() -> Variants {
-        Variants::basic(part1)
+    fn part1() -> helper::Variants {
+        part1_variants!(construct_variants)
     }
 
-    fn part2() -> Variants {
-        Variants::basic(part2)
+    fn part2() -> helper::Variants {
+        part2_variants!(construct_variants)
     }
 }
 
@@ -128,3 +138,5 @@ helper::tests! {
         default => 81939900;
     }
 }
+
+helper::benchmarks! {}

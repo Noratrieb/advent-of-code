@@ -1,0 +1,3 @@
+fn main() {
+    day3::main();
+}

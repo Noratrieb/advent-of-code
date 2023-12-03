@@ -7,3 +7,8 @@ edition = "2021"
 
 [dependencies]
 helper.workspace = true
+divan.workspace = true
+
+[[bench]]
+name = "benches"
+harness = false

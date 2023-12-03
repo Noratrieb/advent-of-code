@@ -5,6 +5,7 @@ use std::borrow::Cow;
 use nom::{character::complete::digit1, combinator::map, IResult};
 
 pub use self::cmd::main;
+pub use divan;
 
 pub type Solution = fn(&str) -> u64;
 
@@ -63,6 +64,75 @@ pub fn test_part2<D: Day>(inputs: &[(&str, u64)]) {
             }
         }
     }
+}
+
+#[macro_export]
+macro_rules! define_variants {
+    (
+        day => $day:ty;
+        part1 {
+            $( $name1:ident => $func1:expr; )*
+        }
+        part2 {
+            $( $name2:ident => $func2:expr; )*
+        }
+    ) => {
+        macro_rules! part1_variants {
+            ($macro:ident) => {
+                $crate::$macro! { $day; $( ($name1, $func1) ),* }
+            };
+        }
+        macro_rules! part2_variants {
+            ($macro:ident) => {
+                $crate::$macro! { $day; $( ($name2, $func2) ),* }
+            };
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! construct_variants {
+    ( $day:ty; $( ($name:ident, $func:expr) ),*) => {
+        $crate::Variants {
+            variants: vec![$(
+                $crate::Variant::new(stringify!($name), $func)
+            ),*]
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! benchmarks {
+    () => {
+        #[::divan::bench_group(sample_count = 1_000)]
+        mod bench {
+            mod part1 {
+                part1_variants! { _define_benchmarks }
+            }
+            mod part2 {
+                part2_variants! { _define_benchmarks }
+            }
+        }
+
+        pub fn bench() {
+            divan::main();
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! _define_benchmarks {
+    ($day:ty; $( ($name:ident, $func:expr) ),*) => {
+        $(
+            #[::divan::bench]
+            fn $name(bencher: ::divan::Bencher) {
+                let input = include_str!("../input.txt");
+                let input = <$day as $crate::Day>::pad_input(input);
+
+                bencher.with_inputs(|| input.as_ref()).bench_values($func);
+            }
+        )*
+    };
 }
 
 #[macro_export]
