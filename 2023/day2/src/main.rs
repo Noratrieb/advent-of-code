@@ -25,9 +25,9 @@ fn main() {
     println!("result: {result}");
 }
 
-struct Day4;
+struct Day2;
 
-impl Day for Day4 {
+impl Day for Day2 {
     fn part1() -> helper::Variants {
         Variants::basic(part1)
     }
@@ -101,23 +101,14 @@ fn part2(input: &str) -> u64 {
         .sum()
 }
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn part1() {
-        helper::test_part1::<super::Day4>(&[
-            (include_str!("../input_small.txt"), 8),
-            (include_str!("../input.txt"), 1931),
-        ]
-        );
+helper::tests! {
+    day2 Day2;
+    part1 {
+        small => 8;
+        default => 1931;
     }
-
-    #[test]
-    fn part2() {
-        helper::test_part2::<super::Day4>(&[
-            (include_str!("../input_small.txt"), 2286),
-            (include_str!("../input.txt"), 83105),
-        ]
-        );
+    part2 {
+        small => 2286;
+        default => 83105;
     }
 }

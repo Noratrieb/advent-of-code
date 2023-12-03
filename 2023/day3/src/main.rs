@@ -130,23 +130,14 @@ fn part2(input: &str) -> u64 {
         .sum()
 }
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn part1() {
-        helper::test_part1::<super::Day3>(&[
-            (include_str!("../input_small.txt"), 4361),
-            (include_str!("../input.txt"), 537832),
-        ]
-        );
+helper::tests! {
+    day3 Day3;
+    part1 {
+        small => 4361;
+        default => 537832;
     }
-
-    #[test]
-    fn part2() {
-        helper::test_part2::<super::Day3>(&[
-            (include_str!("../input_small.txt"), 467835),
-            (include_str!("../input.txt"), 81939900),
-        ]
-        );
+    part2 {
+        small => 467835;
+        default => 81939900;
     }
 }
