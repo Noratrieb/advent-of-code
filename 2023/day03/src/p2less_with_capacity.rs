@@ -2,53 +2,6 @@ use std::hash::BuildHasherDefault;
 
 use rustc_hash::FxHashMap;
 
-/// States:
-/// - `=0`` -> 0 elements
-/// - `>0, HIGH 0` -> 1 element
-/// - `>0, HIGH 1` -> 2 elements
-/// - `=MAX` -> >2 elements
-#[derive(Debug, Default)]
-struct GearRatio(u64);
-
-const HIGH: u64 = 1 << 63;
-impl GearRatio {
-    fn push(&mut self, value: u64) {
-        if self.0 == 0 {
-            self.0 = value;
-        } else if (self.0 & HIGH) == 0 {
-            self.0 *= value;
-            self.0 |= HIGH;
-        } else {
-            self.0 = u64::MAX;
-        }
-    }
-    fn get(&self) -> Option<u64> {
-        if self.0 > 0 && self.0 != u64::MAX && (self.0 & HIGH) > 1 {
-            Some(self.0 & (HIGH - 1))
-        } else {
-            None
-        }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::GearRatio;
-
-    #[test]
-    fn gear_ratio() {
-        let mut r = GearRatio::default();
-        assert_eq!(r.get(), None);
-        r.push(2);
-        assert_eq!(r.get(), None);
-        r.push(3);
-        eprintln!("{:b}", r.0);
-        assert_eq!(r.get(), Some(6));
-        r.push(1);
-        assert_eq!(r.get(), None);
-    }
-}
-
 pub fn part2(input: &str) -> u64 {
     fn contains_gear(s: &str) -> Option<usize> {
         s.chars().position(|c| !c.is_ascii_digit() && c != '.')
@@ -60,7 +13,7 @@ pub fn part2(input: &str) -> u64 {
     let mut prev2 = empty_border.as_str();
     let mut prev1 = input.lines().next().unwrap();
 
-    let mut gears: FxHashMap<u32, GearRatio> =
+    let mut gears: FxHashMap<u32, Vec<u64>> =
         FxHashMap::with_capacity_and_hasher(1000, BuildHasherDefault::default());
 
     for (line_number, next) in input
@@ -108,5 +61,9 @@ pub fn part2(input: &str) -> u64 {
         prev1 = next;
     }
 
-    gears.values().filter_map(|v| v.get()).sum()
+    gears
+        .values()
+        .filter(|v| v.len() == 2)
+        .map(|v| v[0] * v[1])
+        .sum()
 }
