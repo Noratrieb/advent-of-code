@@ -37,12 +37,12 @@ fn part2(_input: &str) -> u64 {
 helper::tests! {
     day00 Day00;
     part1 {
-        small => 8;
-        default => 1931;
+        small => 0;
+        default => 0;
     }
     part2 {
-        small => 2286;
-        default => 83105;
+        small => 0;
+        default => 0;
     }
 }
 helper::benchmarks! {}

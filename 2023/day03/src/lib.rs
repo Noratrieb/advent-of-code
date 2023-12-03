@@ -1,3 +1,5 @@
+mod p2faster_hash;
+
 use std::collections::HashMap;
 
 use helper::Day;
@@ -15,6 +17,7 @@ helper::define_variants! {
     }
     part2 {
         basic => crate::part2;
+        fasher_hash => crate::p2faster_hash::part2;
     }
 }
 
