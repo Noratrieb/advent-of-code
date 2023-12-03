@@ -9,30 +9,7 @@ mod vectorized;
 mod zero_alloc;
 
 fn main() {
-    let kind = std::env::args().nth(1).unwrap_or("naive".into());
-
-    let mut input = std::hint::black_box(include_str!("../input.txt")).to_owned();
-
-    input.reserve(10); // enough to read u64
-    unsafe {
-        input
-            .as_mut_vec()
-            .spare_capacity_mut()
-            .fill(MaybeUninit::new(0))
-    };
-
-    match kind.as_str() {
-        "part1" => part1(&input),
-        "naive" => naive::part2(&input),
-        "zero_alloc" => zero_alloc::part2(&input),
-        "branchless" => unsafe { branchless::part2(&input) },
-        "no_lines" => unsafe { no_lines::part2(&input) },
-        "vectorized" => unsafe { vectorized::part2(&input) },
-        _ => {
-            eprintln!("error: invalid mode, must be part1,naive,zero_alloc,branchless");
-            std::process::exit(1);
-        }
-    };
+    helper::main::<Day1>(include_str!("../input.txt"));
 }
 
 struct Day1;

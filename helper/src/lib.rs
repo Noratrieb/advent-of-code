@@ -1,6 +1,10 @@
+mod cmd;
+
 use std::borrow::Cow;
 
 use nom::{character::complete::digit1, combinator::map, IResult};
+
+pub use self::cmd::main;
 
 pub type Solution = fn(&str) -> u64;
 

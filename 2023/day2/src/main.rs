@@ -9,20 +9,7 @@ use nom::{
 };
 
 fn main() {
-    let kind = std::env::args().nth(1).unwrap_or("naive".into());
-
-    let input = std::hint::black_box(include_str!("../input.txt")).to_owned();
-
-    let result = match kind.as_str() {
-        "part1" => part1(&input),
-        "part2" => part2(&input),
-        _ => {
-            eprintln!("error: invalid mode, must be part1");
-            std::process::exit(1);
-        }
-    };
-
-    println!("result: {result}");
+    helper::main::<Day2>(include_str!("../input.txt"));
 }
 
 struct Day2;
