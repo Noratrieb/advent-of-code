@@ -92,8 +92,7 @@ fn part2(input: &str) -> u64 {
                 }
             }
 
-            let power = min[0] * min[1] * min[2];
-            power
+            min[0] * min[1] * min[2]
         })
         .sum()
 }

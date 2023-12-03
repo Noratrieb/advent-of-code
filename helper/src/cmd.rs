@@ -78,7 +78,7 @@ fn execute<D: Day>(variant: &Variant, input: &str) -> ! {
     use std::io::Write;
     let input = D::pad_input(input);
     let result = (variant.f)(&input);
-    let err = write!(std::io::stdout(), "{result}\n");
+    let err = writeln!(std::io::stdout(), "{result}");
     if let Err(err) = err {
         if err.kind() != std::io::ErrorKind::BrokenPipe {
             eprintln!("error: {err}");

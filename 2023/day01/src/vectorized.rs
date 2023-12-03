@@ -26,7 +26,7 @@ pub unsafe fn part2(input: &str) -> u64 {
             .read_unaligned()
             .to_le();
 
-        let one = (block & ((1 << (8 * 1)) - 1)) as u8;
+        let one = (block & ((1 << 8) - 1)) as u8;
         let three = block & ((1 << (8 * 3)) - 1);
         let four = block & ((1 << (8 * 4)) - 1);
         let five = block & ((1 << (8 * 5)) - 1);
@@ -61,13 +61,14 @@ pub unsafe fn part2(input: &str) -> u64 {
 
         let mut acc = 0;
 
-        acc |= if one >= b'0' && one <= b'9' { one } else { 0 };
+        acc |= if one.is_ascii_digit() { one } else { 0 };
 
         let mut vector_result = None;
 
-        #[cfg(all(target_arch = "x86_64"))]
+        #[cfg(target_arch = "x86_64")]
         if avx2 {
             use std::arch::x86_64;
+            #[allow(clippy::let_and_return)]
             unsafe fn round(input: u64, compare: [u64; 4], then: [u64; 4]) -> x86_64::__m256i {
                 // YYYYYYYY|AAAAAAAA|XXXXXXXX|BBBBBBBB|
                 let compare = unsafe { std::mem::transmute::<_, x86_64::__m256i>(compare) };

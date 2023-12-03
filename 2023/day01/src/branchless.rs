@@ -20,7 +20,7 @@ pub unsafe fn part2(input: &str) -> u64 {
                 // this out of bounds read is UB under SB, but fine under models that don't do provenance narrowing with slices. i dont care enough to fix it.
                 let block = bytes.as_ptr().add(i).cast::<u64>().read_unaligned().to_le();
 
-                let one = (block & ((1 << (8 * 1)) - 1)) as u8;
+                let one = (block & ((1 << (8)) - 1)) as u8;
                 let three = block & ((1 << (8 * 3)) - 1);
                 let four = block & ((1 << (8 * 4)) - 1);
                 let five = block & ((1 << (8 * 5)) - 1);
@@ -42,7 +42,7 @@ pub unsafe fn part2(input: &str) -> u64 {
                     };
                 }
 
-                insert(if one >= b'0' && one <= b'9' { one } else { 0 });
+                insert(if one.is_ascii_digit() { one } else { 0 });
 
                 check!(EIGHT five == b"eight" => b'8');
                 check!(SEVEN five == b"seven" => b'7');

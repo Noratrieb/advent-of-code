@@ -45,7 +45,7 @@ pub fn part2(input: &str) -> u64 {
     }
 
     let len = input.lines().next().unwrap().len();
-    let empty_border = std::iter::repeat('.').take(len).collect::<String>();
+    let empty_border = ".".repeat(len);
 
     let mut prev2 = empty_border.as_str();
     let mut prev1 = input.lines().next().unwrap();
