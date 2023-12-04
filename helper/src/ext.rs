@@ -15,7 +15,8 @@ pub trait IteratorExt: Iterator {
     /// If `next` panics, collected items are leaked. Too bad!
     fn collect_array<const N: usize>(&mut self) -> Result<[Self::Item; N], CollectArrayError> {
         // SAFETY: Uninit is valid for MaybeUninit
-        let mut array: [MaybeUninit<Self::Item>; N] = unsafe { MaybeUninit::uninit().assume_init() };
+        let mut array: [MaybeUninit<Self::Item>; N] =
+            unsafe { MaybeUninit::uninit().assume_init() };
 
         for i in 0..array.len() {
             array[i].write(self.next().ok_or(CollectArrayError)?);
@@ -27,6 +28,32 @@ pub trait IteratorExt: Iterator {
 
         // SAFETY: All elements have been initialized
         Ok(array.map(|elem| unsafe { elem.assume_init() }))
+    }
+
+    /// Collect an iterator into an array.
+    /// If `next` panics, collected items are leaked. Too bad!
+    fn collect_array_default<const N: usize>(
+        &mut self,
+    ) -> Result<[Self::Item; N], CollectArrayError>
+    where
+        Self::Item: Default + Copy,
+    {
+        // SAFETY: Uninit is valid for MaybeUninit
+        let mut array: [Self::Item; N] = [Default::default(); N];
+
+        for i in 0..array.len() {
+            let Some(elem) = self.next() else {
+                break;
+            };
+            array[i] = elem;
+        }
+
+        if self.next().is_some() {
+            return Err(CollectArrayError);
+        }
+
+        // SAFETY: All elements have been initialized
+        Ok(array)
     }
 }
 
