@@ -1,6 +1,7 @@
 mod p2ascii;
 mod p2cache;
 mod p2chunks;
+mod p2manual_slicing;
 mod p2no_alloc;
 
 use helper::{Day, Variants};
@@ -22,6 +23,7 @@ helper::define_variants! {
         no_alloc => crate::p2no_alloc::part2;
         ascii => crate::p2ascii::part2;
         chunks => crate::p2chunks::part2;
+        manual_slicing => crate::p2manual_slicing::part2;
     }
 }
 

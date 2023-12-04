@@ -1,19 +1,23 @@
+use nom::InputIter;
+
 fn line_match_count(line: &str) -> usize {
     let line = line.as_bytes();
     fn pack(chunk: &[u8]) -> u16 {
         ((chunk[1] as u16) << 8) | (chunk[2] as u16)
     }
 
-    let mut numbers = line.split(|&b| b == b':').nth(1).unwrap().split(|&b| b == b'|');
-    let winning = numbers
-        .next()
-        .unwrap()
-        // Chunks of double digit numbers with a leading space. We don't care about the trailing space.
+    let colon = line.position(|b| b == b':').unwrap();
+    let numbers = &line[(colon + 1)..];
+    let pipe = numbers.position(|b| b == b'|').unwrap();
+    let winning = &numbers[..(pipe - 1)];
+    let you_have = &numbers[(pipe + 1)..];
+
+    let winning = winning
         .chunks_exact(3)
         .map(pack)
         .collect::<arrayvec::ArrayVec<_, 16>>();
 
-    let you_have = numbers.next().unwrap().chunks_exact(3).map(pack);
+    let you_have = you_have.chunks_exact(3).map(pack);
 
     you_have
         .filter(|have| winning.iter().any(|w| w == have))
