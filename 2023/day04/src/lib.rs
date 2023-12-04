@@ -1,4 +1,7 @@
+mod p2ascii;
 mod p2cache;
+mod p2chunks;
+mod p2no_alloc;
 
 use helper::{Day, Variants};
 
@@ -11,11 +14,14 @@ struct Day04;
 helper::define_variants! {
     day => crate::Day04;
     part1 {
-        basic => crate::part1, sample_count=1000;
+        basic => crate::part1;
     }
     part2 {
         basic => crate::part2, sample_count=100;
-        cache => crate::p2cache::part2, sample_count=1000;
+        cache => crate::p2cache::part2;
+        no_alloc => crate::p2no_alloc::part2;
+        ascii => crate::p2ascii::part2;
+        chunks => crate::p2chunks::part2;
     }
 }
 

@@ -1,11 +1,10 @@
 mod cmd;
+mod ext;
 
 use std::{borrow::Cow, fmt::Debug};
 
-use nom::{character::complete::digit1, combinator::map, IResult};
-
 pub use self::cmd::main;
-pub use divan;
+pub use self::ext::*;
 
 pub type Solution = fn(&str) -> u64;
 
@@ -123,7 +122,7 @@ macro_rules! benchmarks {
 #[macro_export]
 macro_rules! _bench_sample_count {
     (;$($tt:tt)*) => {
-        #[::divan::bench(sample_count = 10_000)]
+        #[::divan::bench(sample_count = 5000)]
         $($tt)*
     };
     ($sample_count:expr; $($tt:tt)*) => {
@@ -208,8 +207,4 @@ macro_rules! tests {
             }
         }
     };
-}
-
-pub fn integer(input: &str) -> IResult<&str, u64> {
-    map(digit1, |d: &str| d.parse::<u64>().unwrap())(input)
 }
