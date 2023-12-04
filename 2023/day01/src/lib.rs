@@ -20,7 +20,7 @@ helper::define_variants! {
         basic => crate::part1;
     }
     part2 {
-        naive => crate::naive::part2;
+        naive => crate::naive::part2, sample_count=1000;
         zero_alloc => crate::zero_alloc::part2;
         branchless => |i| unsafe { crate::branchless::part2(i) };
         no_lines => |i| unsafe { crate::no_lines::part2(i) };

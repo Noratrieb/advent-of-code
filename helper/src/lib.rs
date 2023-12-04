@@ -72,20 +72,20 @@ macro_rules! define_variants {
     (
         day => $day:ty;
         part1 {
-            $( $name1:ident => $func1:expr; )*
+            $( $name1:ident => $func1:expr $(, sample_count=$sample_count1:expr)? ; )*
         }
         part2 {
-            $( $name2:ident => $func2:expr; )*
+            $( $name2:ident => $func2:expr $(, sample_count=$sample_count2:expr)? ; )*
         }
     ) => {
         macro_rules! part1_variants {
             ($macro:ident) => {
-                $crate::$macro! { $day; $( ($name1, $func1) ),* }
+                $crate::$macro! { $day; $( ($name1, $func1, [ $( sample_count=$sample_count1, )? ]) ),* }
             };
         }
         macro_rules! part2_variants {
             ($macro:ident) => {
-                $crate::$macro! { $day; $( ($name2, $func2) ),* }
+                $crate::$macro! { $day; $( ($name2, $func2, [ $( sample_count=$sample_count2, )? ]) ),* }
             };
         }
     };
@@ -93,7 +93,7 @@ macro_rules! define_variants {
 
 #[macro_export]
 macro_rules! construct_variants {
-    ( $day:ty; $( ($name:ident, $func:expr) ),*) => {
+    ( $day:ty; $( ($name:ident, $func:expr, [ $($_:tt)* ]) ),*) => {
         $crate::Variants {
             variants: vec![$(
                 $crate::Variant::new(stringify!($name), $func)
@@ -105,7 +105,6 @@ macro_rules! construct_variants {
 #[macro_export]
 macro_rules! benchmarks {
     () => {
-        #[::divan::bench_group(sample_count = 10_000)]
         mod bench {
             mod part1 {
                 part1_variants! { _define_benchmarks }
@@ -122,15 +121,29 @@ macro_rules! benchmarks {
 }
 
 #[macro_export]
-macro_rules! _define_benchmarks {
-    ($day:ty; $( ($name:ident, $func:expr) ),*) => {
-        $(
-            #[::divan::bench]
-            fn $name(bencher: ::divan::Bencher) {
-                let input = include_str!("../input.txt");
-                let input = <$day as $crate::Day>::pad_input(input);
+macro_rules! _bench_sample_count {
+    (;$($tt:tt)*) => {
+        #[::divan::bench(sample_count = 10_000)]
+        $($tt)*
+    };
+    ($sample_count:expr; $($tt:tt)*) => {
+        #[::divan::bench(sample_count = $sample_count)]
+        $($tt)*
+    };
+}
 
-                bencher.with_inputs(|| input.as_ref()).bench_values($func);
+#[macro_export]
+macro_rules! _define_benchmarks {
+    ($day:ty; $( ($name:ident, $func:expr, [ $(sample_count=$sample_count:expr,)? ]) ),*) => {
+        $(
+            $crate::_bench_sample_count! {
+                $($sample_count)?;
+                fn $name(bencher: ::divan::Bencher) {
+                    let input = include_str!("../input.txt");
+                    let input = <$day as $crate::Day>::pad_input(input);
+
+                    bencher.with_inputs(|| input.as_ref()).bench_values($func);
+                }
             }
         )*
     };
