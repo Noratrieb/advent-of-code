@@ -20,13 +20,13 @@ pub fn part2(input: &str) -> u64 {
         .map(|seed| (0, 0, seed[0]..(seed[0] + seed[1])))
         .collect();
 
-    'queue: while let Some((place, range_idx, numbers)) = current_seeds.pop() {
-        if place == maps.len() {
+    'queue: while let Some((stage, range_idx, numbers)) = current_seeds.pop() {
+        if stage == maps.len() {
             // Range is done.
             min_loc = cmp::min(min_loc, numbers.start);
             continue;
         }
-        let ranges = &maps[place];
+        let ranges = &maps[stage];
         for range in ranges.iter().skip(range_idx) {
             if range.source_end() <= numbers.start || range.source_start >= numbers.end {
                 // Completely out of range.
@@ -40,21 +40,21 @@ pub fn part2(input: &str) -> u64 {
             let post = range.source_end()..(numbers.end);
 
             if !pre.is_empty() {
-                current_seeds.push((place, range_idx + 1, pre));
+                current_seeds.push((stage, range_idx + 1, pre));
             }
             if !post.is_empty() {
-                current_seeds.push((place, range_idx + 1, post));
+                current_seeds.push((stage, range_idx + 1, post));
             }
             let offset = in_.start - range.source_start;
             let new = (range.dest_start + offset)..(range.dest_start + offset + (in_.end - in_.start));
 
             if !new.is_empty() {
-                current_seeds.push((place + 1, 0, new));
+                current_seeds.push((stage + 1, 0, new));
             }
             continue 'queue;
         }
         // No change, pass unaffected
-        current_seeds.push((place + 1, 0, numbers));
+        current_seeds.push((stage + 1, 0, numbers));
     }
 
     min_loc
