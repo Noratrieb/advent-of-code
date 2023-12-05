@@ -32,7 +32,7 @@ unsafe fn line_match_count_avx2(line: &str) -> usize {
                 let have = x86_64::_mm256_set1_epi16(have as _);
                 let eq = x86_64::_mm256_cmpeq_epi16(winning, have);
 
-                x86_64::_mm256_movemask_epi8(eq) > 0
+                x86_64::_mm256_movemask_epi8(eq) != 0
             })
             .count()
     }
