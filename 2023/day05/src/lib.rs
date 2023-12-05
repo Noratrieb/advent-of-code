@@ -1,3 +1,5 @@
+mod p2basic;
+
 use helper::{Day, IteratorExt, Variants};
 
 pub fn main() {
@@ -12,7 +14,7 @@ helper::define_variants! {
         basic => crate::part1;
     }
     part2 {
-        basic => crate::part2;
+        basic => crate::p2basic::part2;
     }
 }
 
@@ -31,6 +33,12 @@ struct MappedRange {
     dest_start: u64,
     source_start: u64,
     len: u64,
+}
+
+impl MappedRange {
+    fn source_end(&self) -> u64 {
+        self.source_start + self.len
+    }
 }
 
 fn parse_maps<'a>(mut lines: impl Iterator<Item = &'a str>) -> Vec<Vec<MappedRange>> {
@@ -95,8 +103,42 @@ fn part1(input: &str) -> u64 {
     min_loc
 }
 
-fn part2(_input: &str) -> u64 {
-    0
+#[allow(dead_code)]
+fn part2_brute_force(input: &str) -> u64 {
+    let mut lines = input.lines();
+    let seeds = lines
+        .next()
+        .unwrap()
+        .strip_prefix("seeds: ")
+        .unwrap()
+        .split_ascii_whitespace()
+        .map(|n| n.parse::<u64>().unwrap())
+        .collect::<Vec<_>>();
+    let seeds = seeds.chunks(2);
+
+    let maps = parse_maps(lines);
+
+    let mut min_loc = u64::MAX;
+
+    for seeds in seeds {
+        for mut seed in seeds[0]..(seeds[0] + seeds[1]) {
+            for ranges in &maps {
+                match ranges.iter().find(|range| {
+                    (range.source_start..(range.source_start + range.len)).contains(&seed)
+                }) {
+                    Some(range) => {
+                        let offset = seed - range.source_start;
+                        let new = range.dest_start + offset;
+                        seed = new;
+                    }
+                    None => {}
+                }
+            }
+            min_loc = std::cmp::min(min_loc, seed);
+        }
+    }
+
+    min_loc
 }
 
 helper::tests! {
@@ -106,8 +148,8 @@ helper::tests! {
         default => 457535844;
     }
     part2 {
-        small => 0;
-        default => 0;
+        small => 46;
+        default => 41222968;
     }
 }
 helper::benchmarks! {}
