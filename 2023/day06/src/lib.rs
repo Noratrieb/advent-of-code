@@ -12,7 +12,7 @@ helper::define_variants! {
         basic => crate::part1;
     }
     part2 {
-        basic => crate::part2;
+        basic => crate::part2, sample_count=50;
     }
 }
 
@@ -32,6 +32,21 @@ struct Race {
     distance: u64,
 }
 
+impl Race {
+    fn winning_presses(&self) -> u64 {
+        let t = self.time;
+
+        (0..t)
+            .filter(move |&i| {
+                let t_run = t - i;
+                let d = t_run * i;
+
+                d > self.distance
+            })
+            .count() as u64
+    }
+}
+
 fn parse(input: &str) -> Vec<Race> {
     let lines = input.lines().collect_array::<2>().unwrap();
     lines[0]
@@ -48,36 +63,40 @@ fn parse(input: &str) -> Vec<Race> {
 fn part1(input: &str) -> u64 {
     let races = parse(input);
 
-    races
-        .iter()
-        .map(|race| {
-            let t = race.time;
-
-            (0..t)
-                .filter(|&i| {
-                    let t_run = t - i;
-                    let d = t_run * i;
-
-                    d > race.distance
-                })
-                .count() as u64
-        })
-        .product()
+    races.iter().map(Race::winning_presses).product()
 }
 
-fn part2(_input: &str) -> u64 {
-    0
+fn parse2(input: &str) -> Race {
+    let lines = input.lines().collect_array::<2>().unwrap().map(|line| {
+        line.split_ascii_whitespace()
+            .skip(1)
+            .collect::<String>()
+            .parse()
+            .unwrap()
+    });
+
+    Race {
+        time: lines[0],
+        distance: lines[1],
+    }
+}
+
+fn part2(input: &str) -> u64 {
+    let race = parse2(input);
+    race.winning_presses()
 }
 
 helper::tests! {
     day06 Day06;
     part1 {
-        small => 0;
-        default => 0;
+        small => 288;
+        default => 6209190;
     }
     part2 {
-        small => 0;
-        default => 0;
+        small => 71503;
+        default => 28545089;
     }
 }
-helper::benchmarks! {}
+helper::benchmarks! {
+
+}
