@@ -1,57 +1,8 @@
-mod sort_key;
-mod unstable_sort;
-
 use std::cmp::{self, Ordering};
 
-use helper::{Day, IteratorExt, Variants};
+use helper::IteratorExt;
 
-pub fn main() {
-    helper::main::<Day07>(include_str!("../input.txt"));
-}
-
-struct Day07;
-
-helper::define_variants! {
-    day => crate::Day07;
-    part1 {
-        basic => crate::part1, sample_count=10000;
-        unstable_sort => crate::unstable_sort::part1, sample_count=10000;
-        card_soa => crate::sort_key::part1, sample_count=10000;
-    }
-    part2 {
-        basic => crate::part2, sample_count=10000;
-        unstable_sort => crate::unstable_sort::part2, sample_count=10000;
-        card_soa => crate::sort_key::part2, sample_count=10000;
-    }
-}
-
-impl Day for Day07 {
-    fn part1() -> Variants {
-        part1_variants!(construct_variants)
-    }
-
-    fn part2() -> Variants {
-        part2_variants!(construct_variants)
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-enum HandType {
-    FiveSame = 0,
-    FourSame,
-    FullHouse,
-    ThreeSame,
-    TwoPair,
-    OnePair,
-    HighCard,
-}
-
-#[derive(Debug)]
-struct Hand {
-    values: [u8; 5],
-    hand_type: HandType,
-    bid: u64,
-}
+use crate::{Hand, HandType};
 
 fn hand_type_of(hand: [u8; 5], has_jokers: bool) -> HandType {
     let mut card_type = [0; 5];
@@ -71,7 +22,7 @@ fn hand_type_of(hand: [u8; 5], has_jokers: bool) -> HandType {
             counts[idx] = 1_u8;
         }
     }
-    counts.sort_by_key(|&c| cmp::Reverse(c));
+    counts.sort_unstable_by_key(|&c| cmp::Reverse(c));
 
     if counts[0] + jokers == 5 {
         HandType::FiveSame
@@ -130,7 +81,7 @@ fn parse(input: &str, has_jokers: bool) -> Vec<Hand> {
 
 fn evaluate_hands(hands: &mut [Hand], has_jokers: bool) -> u64 {
     // Worst hand first, best hand last.
-    hands.sort_by(|a, b| {
+    hands.sort_unstable_by(|a, b| {
         let mk_compare = |v| match v {
             b'A' => b'Z',
             b'K' => b'Y',
@@ -162,25 +113,12 @@ fn evaluate_hands(hands: &mut [Hand], has_jokers: bool) -> u64 {
         .sum()
 }
 
-fn part1(input: &str) -> u64 {
+pub fn part1(input: &str) -> u64 {
     let mut hands = parse(input, false);
     evaluate_hands(&mut hands, false)
 }
 
-fn part2(input: &str) -> u64 {
+pub fn part2(input: &str) -> u64 {
     let mut hands = parse(input, true);
     evaluate_hands(&mut hands, true)
 }
-
-helper::tests! {
-    day07 Day07;
-    part1 {
-        small => 6440;
-        default => 248453531;
-    }
-    part2 {
-        small => 5905;
-        default => 248781813;
-    }
-}
-helper::benchmarks! {}
