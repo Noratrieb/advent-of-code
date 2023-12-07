@@ -1,4 +1,4 @@
-mod sort_key;
+mod sort_cache;
 mod unstable_sort;
 
 use std::cmp::{self, Ordering};
@@ -16,12 +16,12 @@ helper::define_variants! {
     part1 {
         basic => crate::part1, sample_count=10000;
         unstable_sort => crate::unstable_sort::part1, sample_count=10000;
-        card_soa => crate::sort_key::part1, sample_count=10000;
+        sort_cache => crate::sort_cache::part1, sample_count=10000;
     }
     part2 {
         basic => crate::part2, sample_count=10000;
         unstable_sort => crate::unstable_sort::part2, sample_count=10000;
-        card_soa => crate::sort_key::part2, sample_count=10000;
+        sort_cache => crate::sort_cache::part2, sample_count=10000;
     }
 }
 

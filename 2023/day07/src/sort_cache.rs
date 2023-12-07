@@ -1,8 +1,15 @@
-use std::cmp::{self};
+use std::cmp::{self, Ordering};
 
 use helper::IteratorExt;
 
-use crate::{Hand, HandType};
+use crate::HandType;
+
+#[derive(Debug)]
+struct Hand {
+    values_cmp: [u8; 5],
+    hand_type: HandType,
+    bid: u64,
+}
 
 fn hand_type_of(hand: [u8; 5], has_jokers: bool) -> HandType {
     let mut card_type = [0; 5];
@@ -69,9 +76,15 @@ fn parse(input: &str, has_jokers: bool) -> Vec<Hand> {
 
             let values = cards.bytes().collect_array::<5>().unwrap();
             let hand_type = hand_type_of(values, has_jokers);
-
+            let mk_compare = |v| match v {
+                b'A' => b'Z',
+                b'K' => b'Y',
+                b'T' => b'I',
+                b'J' if has_jokers => b'0',
+                other => other,
+            };
             Hand {
-                values,
+                values_cmp: values.map(mk_compare),
                 hand_type,
                 bid,
             }
@@ -79,18 +92,18 @@ fn parse(input: &str, has_jokers: bool) -> Vec<Hand> {
         .collect()
 }
 
-fn evaluate_hands(hands: &mut [Hand], has_jokers: bool) -> u64 {
+fn evaluate_hands(hands: &mut [Hand]) -> u64 {
     // Worst hand first, best hand last.
-    hands.sort_unstable_by_key(|hand| {
-        let mk_compare = |v| match v {
-            b'A' => b'Z',
-            b'K' => b'Y',
-            b'T' => b'I',
-            b'J' if has_jokers => b'0',
-            other => other,
-        };
-
-        cmp::Reverse((hand.hand_type, cmp::Reverse(hand.values.map(mk_compare))))
+    hands.sort_unstable_by(|a, b| {
+        let cmp = b.hand_type.cmp(&a.hand_type);
+        if cmp != Ordering::Equal {
+            return cmp;
+        }
+        let cmp = a.values_cmp.cmp(&b.values_cmp);
+        if cmp != Ordering::Equal {
+            return cmp;
+        }
+        Ordering::Equal
     });
 
     hands
@@ -102,10 +115,10 @@ fn evaluate_hands(hands: &mut [Hand], has_jokers: bool) -> u64 {
 
 pub fn part1(input: &str) -> u64 {
     let mut hands = parse(input, false);
-    evaluate_hands(&mut hands, false)
+    evaluate_hands(&mut hands)
 }
 
 pub fn part2(input: &str) -> u64 {
     let mut hands = parse(input, true);
-    evaluate_hands(&mut hands, true)
+    evaluate_hands(&mut hands)
 }
