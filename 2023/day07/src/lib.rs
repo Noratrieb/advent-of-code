@@ -47,10 +47,15 @@ struct Hand {
 }
 
 impl HandType {
-    fn of(hand: [u8; 5]) -> Self {
+    fn of(hand: [u8; 5], has_jokers: bool) -> Self {
         let mut map: [Option<(u8, u8)>; 5] = [None; 5];
+        let mut jokers = 0;
 
         for card in hand {
+            if card == b'J' && has_jokers {
+                jokers += 1;
+                continue;
+            }
             if let Some(existing) = map.iter_mut().find(|c| c.is_some_and(|c| c.0 == card)) {
                 existing.as_mut().unwrap().1 += 1;
             } else {
@@ -61,17 +66,23 @@ impl HandType {
         map.sort_by_key(|c| cmp::Reverse(c.map(|c| c.1)));
 
         let map = map.map(|c| c.map_or(0, |c| c.1));
-        if map[0] == 5 {
+        if map[0] + jokers == 5 {
             Self::FiveSame
-        } else if map[0] == 4 {
+        } else if map[0] + jokers == 4 {
             Self::FourSame
-        } else if map[0] == 3 && map[1] == 2 {
+        // If there are only cards of two types + jokers, then we can form a full house
+        // no matter how they're set up.
+        } else if map[0] + map[1] + jokers == 5 {
             Self::FullHouse
-        } else if map[0] == 3 {
+        } else if map[0] + jokers == 3 {
             Self::ThreeSame
-        } else if map[0] == 2 && map[1] == 2 {
+        // We need four cards for a two pair. Given that the previous constellations
+        // are not possible, we are able to build a two pair.
+        } else if map[0] + map[1] + jokers == 4 {
             Self::TwoPair
-        } else if map[0] == 2 {
+        // Fun fact: This == is fine and needn't be >=, because if map[0]+jokers==3,
+        // then we can build two pairs.
+        } else if map[0] + jokers == 2 {
             Self::OnePair
         } else {
             Self::HighCard
@@ -85,12 +96,13 @@ mod tests {
 
     #[test]
     fn hand_type() {
-        assert_eq!(HandType::of(*b"32T3K"), HandType::OnePair);
-        assert_eq!(HandType::of(*b"K6KK6"), HandType::FullHouse);
+        assert_eq!(HandType::of(*b"32T3K", false), HandType::OnePair);
+        assert_eq!(HandType::of(*b"K6KK6", false), HandType::FullHouse);
+        assert_eq!(HandType::of(*b"KTJJT", true), HandType::FourSame);
     }
 }
 
-fn parse(input: &str) -> Vec<Hand> {
+fn parse(input: &str, has_jokers: bool) -> Vec<Hand> {
     input
         .lines()
         .map(|line| {
@@ -99,7 +111,7 @@ fn parse(input: &str) -> Vec<Hand> {
             let bid = parts.next().unwrap().parse().unwrap();
 
             let values = cards.bytes().collect_array::<5>().unwrap();
-            let hand_type = HandType::of(values);
+            let hand_type = HandType::of(values, has_jokers);
 
             Hand {
                 values,
@@ -110,15 +122,14 @@ fn parse(input: &str) -> Vec<Hand> {
         .collect()
 }
 
-fn part1(input: &str) -> u64 {
-    let mut hands = parse(input);
-
+fn evaluate_hands(hands: &mut [Hand], has_jokers: bool) -> u64 {
     // Worst hand first, best hand last.
     hands.sort_by(|a, b| {
         let mk_compare = |v| match v {
             b'A' => b'Z',
             b'K' => b'Y',
             b'T' => b'I',
+            b'J' if has_jokers => b'0',
             other => other,
         };
 
@@ -145,8 +156,14 @@ fn part1(input: &str) -> u64 {
         .sum()
 }
 
-fn part2(_input: &str) -> u64 {
-    0
+fn part1(input: &str) -> u64 {
+    let mut hands = parse(input, false);
+    evaluate_hands(&mut hands, false)
+}
+
+fn part2(input: &str) -> u64 {
+    let mut hands = parse(input, true);
+    evaluate_hands(&mut hands, true)
 }
 
 helper::tests! {
@@ -156,7 +173,7 @@ helper::tests! {
         default => 248453531;
     }
     part2 {
-        small => 0;
+        small => 5905;
         default => 0;
     }
 }
