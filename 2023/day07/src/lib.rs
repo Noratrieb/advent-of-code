@@ -14,14 +14,14 @@ struct Day07;
 helper::define_variants! {
     day => crate::Day07;
     part1 {
-        basic => crate::part1, sample_count=10000;
-        unstable_sort => crate::unstable_sort::part1, sample_count=10000;
-        sort_cache => crate::precompute_more::part1, sample_count=10000;
+        basic => crate::part1;
+        unstable_sort => crate::unstable_sort::part1;
+        sort_cache => crate::precompute_more::part1;
     }
     part2 {
-        basic => crate::part2, sample_count=10000;
-        unstable_sort => crate::unstable_sort::part2, sample_count=10000;
-        sort_cache => crate::precompute_more::part2, sample_count=10000;
+        basic => crate::part2;
+        unstable_sort => crate::unstable_sort::part2;
+        sort_cache => crate::precompute_more::part2;
     }
 }
 

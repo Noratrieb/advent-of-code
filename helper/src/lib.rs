@@ -122,7 +122,7 @@ macro_rules! benchmarks {
 #[macro_export]
 macro_rules! _bench_sample_count {
     (;$($tt:tt)*) => {
-        #[::divan::bench(sample_count = 5000)]
+        #[::divan::bench(sample_count = 10000)]
         $($tt)*
     };
     ($sample_count:expr; $($tt:tt)*) => {

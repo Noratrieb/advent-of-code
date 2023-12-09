@@ -1,5 +1,6 @@
 mod less_alloc;
 mod number_parsing;
+mod unify_parsing;
 
 use std::ops::Add;
 
@@ -17,11 +18,13 @@ helper::define_variants! {
         basic => crate::part1;
         less_alloc => crate::less_alloc::part1;
         number_parsing => crate::number_parsing::part1;
+        unify_parsing => crate::unify_parsing::part1;
     }
     part2 {
         basic => crate::part2;
         less_alloc => crate::less_alloc::part2;
         number_parsing => crate::number_parsing::part2;
+        unify_parsing => crate::unify_parsing::part2;
     }
 }
 
