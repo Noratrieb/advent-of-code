@@ -42,7 +42,6 @@ pub trait IteratorExt: Iterator {
     where
         Self::Item: Default + Copy,
     {
-        // SAFETY: Uninit is valid for MaybeUninit
         let mut array: [Self::Item; N] = [Default::default(); N];
 
         for i in 0..array.len() {
@@ -56,7 +55,6 @@ pub trait IteratorExt: Iterator {
             return Err(CollectArrayError);
         }
 
-        // SAFETY: All elements have been initialized
         Ok(array)
     }
 }
