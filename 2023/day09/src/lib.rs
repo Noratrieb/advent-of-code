@@ -1,3 +1,5 @@
+use std::ops::Add;
+
 use helper::{Day, Variants};
 
 pub fn main() {
@@ -34,10 +36,14 @@ fn parse(input: &str) -> impl Iterator<Item = Vec<i64>> + '_ {
     })
 }
 
-fn part1(input: &str) -> u64 {
-    parse(input)
+fn execute(
+    input: impl Iterator<Item = Vec<i64>>,
+    last_or_first: impl Fn(&[i64]) -> i64,
+    fold: impl Fn(i64, i64) -> i64 + Copy,
+) -> i64 {
+    input
         .map(|mut values| {
-            let mut last_values = vec![*values.last().unwrap()];
+            let mut last_values = vec![last_or_first(&values)];
 
             let mut derive = values.clone();
 
@@ -45,41 +51,24 @@ fn part1(input: &str) -> u64 {
                 values.clear();
                 values.extend(derive.windows(2).map(|s| s[1] - s[0]));
 
-                last_values.push(*values.last().unwrap());
+                last_values.push(last_or_first(&values));
 
                 let tmp = derive;
                 derive = values;
                 values = tmp;
             }
 
-            last_values.into_iter().rev().sum::<i64>()
+            last_values.into_iter().rev().fold(0, fold)
         })
-        .sum::<i64>() as u64
+        .sum::<i64>()
+}
+
+fn part1(input: &str) -> u64 {
+    execute(parse(input), |s| *s.last().unwrap(), Add::add) as u64
 }
 
 fn part2(input: &str) -> u64 {
-    parse(input)
-        .map(|mut values| {
-            let mut first_values = vec![*values.first().unwrap()];
-
-            let mut derive = values.clone();
-
-            while !derive.iter().all(|&n| n == 0) {
-                values.clear();
-                values.extend(derive.windows(2).map(|s| s[1] - s[0]));
-
-                first_values.push(*values.first().unwrap());
-
-                let tmp = derive;
-                derive = values;
-                values = tmp;
-            }
-            first_values
-                .into_iter()
-                .rev()
-                .fold(0, |acc, first| first - acc)
-        })
-        .sum::<i64>() as u64
+    execute(parse(input), |s| *s.first().unwrap(), |a, b| b - a) as u64
 }
 
 helper::tests! {
@@ -89,8 +78,8 @@ helper::tests! {
         default => 1934898178;
     }
     part2 {
-        small => 0;
-        default => 0;
+        small => 2;
+        default => 1129;
     }
 }
 helper::benchmarks! {}
