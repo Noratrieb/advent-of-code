@@ -60,9 +60,9 @@ mod tests {
 
     #[test]
     fn hand_type() {
-        assert_eq!(super::hand_type_of(*b"32T3K", false), HandType::OnePair);
-        assert_eq!(super::hand_type_of(*b"K6KK6", false), HandType::FullHouse);
-        assert_eq!(super::hand_type_of(*b"KTJJT", true), HandType::FourSame);
+        assert_eq!(precompute_more::hand_type_of(*b"32T3K", false), HandType::OnePair);
+        assert_eq!(precompute_more::hand_type_of(*b"K6KK6", false), HandType::FullHouse);
+        assert_eq!(precompute_more::hand_type_of(*b"KTJJT", true), HandType::FourSame);
     }
 }
 
