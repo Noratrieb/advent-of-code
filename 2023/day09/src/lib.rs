@@ -1,3 +1,5 @@
+mod less_alloc;
+
 use std::ops::Add;
 
 use helper::{Day, Variants};
@@ -12,9 +14,11 @@ helper::define_variants! {
     day => crate::Day09;
     part1 {
         basic => crate::part1;
+        less_alloc => crate::less_alloc::part1;
     }
     part2 {
         basic => crate::part2;
+        less_alloc => crate::less_alloc::part2;
     }
 }
 
