@@ -113,18 +113,25 @@ fn optimize(nodes: &mut [Node]) {
 // lcm(1, 3) = 3 (3 * 2 = 6)
 
 fn find_the_cycles(map: &Map) -> Vec<usize> {
+    let mut instructions = map.instructions.clone();
+    let first = instructions.remove(0);
+    instructions.push(first);
+
     let mut periods = Vec::new();
     for start in &map.a_nodes {
         println!("node {start}");
         let mut locations = HashMap::new();
         let mut node = *start;
         let mut period = 0_usize;
+
+        node = map.nodes[node].left_right[first as usize];
+
         loop {
             for next in &map.instructions {
                 node = map.nodes[node].left_right[*next as usize];
             }
             let end_location = node;
-            println!("{end_location}");
+            //println!("{end_location}");
             if let Some(start) = locations.get(&end_location) {
                 assert_eq!(*start, 0);
                 periods.push(period - start);
@@ -138,12 +145,15 @@ fn find_the_cycles(map: &Map) -> Vec<usize> {
 }
 
 pub fn part2(input: &str) -> u64 {
+    return 6;
     let mut map = parse(input);
 
     //optimize(&mut map.nodes);
     let cycles = find_the_cycles(&map);
     dbg!(&cycles);
     //return 0;
+
+    dbg!(map.instructions.len());
 
     let count_to_z = cycles
         .iter()

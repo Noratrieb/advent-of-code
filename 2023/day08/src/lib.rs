@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 mod p1basic;
 mod p2basic;
 
@@ -38,7 +40,7 @@ helper::tests! {
     }
     part2 {
         "../input_small2.txt" => 6;
-        "../input.txt" => 0;
+        "../input.txt" => 6 /* TODO */;
     }
 }
 

@@ -6,6 +6,10 @@ pub fn integer(input: &str) -> IResult<&str, u64> {
     map(digit1, |d: &str| d.parse::<u64>().unwrap())(input)
 }
 
+pub fn parse_unwrap(s: &str) -> u64 {
+    s.parse().unwrap()
+}
+
 #[derive(Debug)]
 pub struct CollectArrayError;
 
