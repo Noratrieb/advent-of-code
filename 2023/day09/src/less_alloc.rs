@@ -10,28 +10,28 @@ fn execute(
     last_or_first: impl Fn(&[i64]) -> i64,
     fold: impl Fn(i64, i64) -> i64 + Copy,
 ) -> i64 {
-    let mut values = Vec::with_capacity(128);
-    let mut derive = Vec::with_capacity(128);
+    let mut row1 = Vec::with_capacity(128);
+    let mut row2 = Vec::with_capacity(128);
 
     let mut last_values = Vec::with_capacity(16);
 
     input
         .map(|values_iter| {
-            values.clear();
+            row1.clear();
 
-            values.extend(values_iter);
-            derive.clone_from(&values);
+            row1.extend(values_iter);
+            row2.clone_from(&row1);
 
             last_values.clear();
-            last_values.push(last_or_first(&values));
+            last_values.push(last_or_first(&row1));
 
-            while !derive.iter().all(|&n| n == 0) {
-                values.clear();
-                values.extend(derive.windows(2).map(|s| s[1] - s[0]));
+            while !row2.iter().all(|&n| n == 0) {
+                row1.clear();
+                row1.extend(row2.windows(2).map(|s| s[1] - s[0]));
 
-                last_values.push(last_or_first(&values));
+                last_values.push(last_or_first(&row1));
 
-                std::mem::swap(&mut values, &mut derive);
+                std::mem::swap(&mut row1, &mut row2);
             }
 
             last_values.iter().copied().rev().fold(0, fold)

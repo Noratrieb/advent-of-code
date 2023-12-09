@@ -46,20 +46,20 @@ fn execute(
     fold: impl Fn(i64, i64) -> i64 + Copy,
 ) -> i64 {
     input
-        .map(|mut values| {
-            let mut last_values = vec![last_or_first(&values)];
+        .map(|mut row1| {
+            let mut last_values = vec![last_or_first(&row1)];
 
-            let mut derive = values.clone();
+            let mut row2 = row1.clone();
 
-            while !derive.iter().all(|&n| n == 0) {
-                values.clear();
-                values.extend(derive.windows(2).map(|s| s[1] - s[0]));
+            while !row2.iter().all(|&n| n == 0) {
+                row1.clear();
+                row1.extend(row2.windows(2).map(|s| s[1] - s[0]));
 
-                last_values.push(last_or_first(&values));
+                last_values.push(last_or_first(&row1));
 
-                let tmp = derive;
-                derive = values;
-                values = tmp;
+                let tmp = row2;
+                row2 = row1;
+                row1 = tmp;
             }
 
             last_values.into_iter().rev().fold(0, fold)
