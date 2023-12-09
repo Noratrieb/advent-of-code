@@ -22,6 +22,10 @@ fn parse(line: &str, into: &mut Vec<i64>) {
             }
         }
     }
+    if neg {
+        acc = -acc
+    };
+    into.push(acc);
 }
 
 fn execute(
