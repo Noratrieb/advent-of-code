@@ -1,4 +1,5 @@
 mod less_alloc;
+mod number_parsing;
 
 use std::ops::Add;
 
@@ -15,10 +16,12 @@ helper::define_variants! {
     part1 {
         basic => crate::part1;
         less_alloc => crate::less_alloc::part1;
+        number_parsing => crate::number_parsing::part1;
     }
     part2 {
         basic => crate::part2;
         less_alloc => crate::less_alloc::part2;
+        number_parsing => crate::number_parsing::part2;
     }
 }
 
