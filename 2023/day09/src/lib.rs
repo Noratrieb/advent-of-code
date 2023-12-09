@@ -27,9 +27,11 @@ impl Day for Day09 {
 }
 
 fn parse(input: &str) -> impl Iterator<Item = Vec<i64>> + '_ {
-    input
-        .lines()
-        .map(|line| line.split_ascii_whitespace().map(|s| s.parse().unwrap()).collect())
+    input.lines().map(|line| {
+        line.split_ascii_whitespace()
+            .map(|s| s.parse().unwrap())
+            .collect()
+    })
 }
 
 fn part1(input: &str) -> u64 {
@@ -50,20 +52,41 @@ fn part1(input: &str) -> u64 {
                 values = tmp;
             }
 
-            last_values.into_iter().sum::<i64>()
+            last_values.into_iter().rev().sum::<i64>()
         })
         .sum::<i64>() as u64
 }
 
-fn part2(_input: &str) -> u64 {
-    0
+fn part2(input: &str) -> u64 {
+    parse(input)
+        .map(|mut values| {
+            let mut first_values = vec![*values.first().unwrap()];
+
+            let mut derive = values.clone();
+
+            while !derive.iter().all(|&n| n == 0) {
+                values.clear();
+                values.extend(derive.windows(2).map(|s| s[1] - s[0]));
+
+                first_values.push(*values.first().unwrap());
+
+                let tmp = derive;
+                derive = values;
+                values = tmp;
+            }
+            first_values
+                .into_iter()
+                .rev()
+                .fold(0, |acc, first| first - acc)
+        })
+        .sum::<i64>() as u64
 }
 
 helper::tests! {
     day09 Day09;
     part1 {
-        small => 0;
-        default => 0;
+        small => 114;
+        default => 1934898178;
     }
     part2 {
         small => 0;
