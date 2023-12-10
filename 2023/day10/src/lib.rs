@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use helper::{Day, Variants};
+use helper::{Day, IteratorExt, Variants};
 
 pub fn main() {
     helper::main::<Day10>(include_str!("../input.txt"));
@@ -242,6 +242,14 @@ fn part1(input: &str) -> u64 {
 }
 
 fn surroundings(pos: usize, width: usize, len: usize, byte: u8) -> impl Iterator<Item = usize> {
+    surroundings_opt(pos, width, len, byte).flatten()
+}
+fn surroundings_opt(
+    pos: usize,
+    width: usize,
+    len: usize,
+    byte: u8,
+) -> impl Iterator<Item = Option<usize>> {
     [
         // TODO: also use these filters in part 1
         left(pos, width).filter(|_| points_to(byte, Direction::Left)),
@@ -250,13 +258,17 @@ fn surroundings(pos: usize, width: usize, len: usize, byte: u8) -> impl Iterator
         bottom(pos, len, width).filter(|_| points_to(byte, Direction::Bottom)),
     ]
     .into_iter()
-    .flatten()
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 enum State {
     Empty,
     Path,
+    Outside,
+    OpenLeft,
+    OpenRight,
+    OpenTop,
+    OpenBottom,
 }
 
 fn part2(input: &str) -> u64 {
@@ -279,31 +291,67 @@ fn part2(input: &str) -> u64 {
 
     tiles[target] = State::Path;
 
-    let mut a = start_surroundings.next().unwrap();
-    let mut b = start_surroundings.next().unwrap();
-    tiles[a] = State::Path;
-    tiles[b] = State::Path;
+    let mut ab = start_surroundings.collect_array::<2>().unwrap();
+    ab.iter().for_each(|&a| tiles[a] = State::Path);
     let mut value = highest_value - 1;
 
     while value > 0 {
-        a = surroundings(a, width, bytes.len(), bytes[a])
-            .find(|&pos| step_map[pos].1 && step_map[pos].0 == value - 1)
-            .unwrap();
-        b = surroundings(b, width, bytes.len(), bytes[b])
-            .find(|&pos| step_map[pos].1 && step_map[pos].0 == value - 1)
-            .unwrap();
+        ab = ab.map(|a| {
+            surroundings(a, width, bytes.len(), bytes[a])
+                .find(|&pos| step_map[pos].1 && step_map[pos].0 == value - 1)
+                .unwrap()
+        });
         value -= 1;
 
-        tiles[a] = State::Path;
-        tiles[b] = State::Path;
+        ab.iter().for_each(|&a| tiles[a] = State::Path);
     }
 
-    print(&tiles, width, |i, state| match state {
-        State::Empty => print!("{}", bytes[i] as char),
-        State::Path => print!("\x1B[1;31m{}\x1B[1;0m", bytes[i] as char),
-    });
+    print_tiles(&tiles, width, &bytes);
 
-    0
+    // Cellular automata!
+    let mut changed = true;
+    while changed {
+        changed = false;
+        std::thread::sleep(std::time::Duration::from_secs(1));
+
+        for i in 0..tiles.len() {
+            let before = tiles[i];
+            if before != State::Empty {
+                continue;
+            }
+
+            for around in surroundings_opt(i, width, bytes.len(), bytes[i]) {
+                // TODO: squeeeeze
+                match around {
+                    None => {
+                        tiles[i] = State::Outside;
+                        changed = true;
+                    }
+                    Some(around) => {
+                        if tiles[around] == State::Outside {
+                            tiles[i] = State::Outside;
+                            changed = true;
+                        }
+                    }
+                }
+            }
+        }
+        print_tiles(&tiles, width, &bytes);
+    }
+
+    tiles.iter().filter(|&&state| state == State::Empty).count() as u64
+}
+
+fn print_tiles(tiles: &[State], width: usize, bytes: &[u8]) {
+    print(&tiles, width, |i, state| {
+        let c = fancy_char(bytes[i]);
+        match state {
+            State::Empty => print!("{c}"),
+            State::Path => print!("\x1B[1;31m{c}\x1B[1;0m"),
+            State::Outside => print!("\x1B[1;34m{c}\x1B[1;0m"),
+            _ => print!("\x1B[1;33m{c}\x1B[1;0m"),
+        }
+    });
 }
 
 fn print<T>(slice: &[T], width: usize, mut cell: impl FnMut(usize, &T)) {
@@ -315,6 +363,19 @@ fn print<T>(slice: &[T], width: usize, mut cell: impl FnMut(usize, &T)) {
             cell(i, elem);
         }
         println!();
+    }
+}
+
+fn fancy_char(byte: u8) -> char {
+    match byte {
+        VERTICAL => '│',
+        HORIZONTAL => '─',
+        BOTTOM_LEFT => '└',
+        BOTTOM_RIGHT => '┘',
+        TOP_RIGHT => '┐',
+        TOP_LEFT => '┌',
+        S => '+',
+        _ => '■',
     }
 }
 
