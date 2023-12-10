@@ -1,3 +1,5 @@
+use std::collections::VecDeque;
+
 use helper::{Day, Variants};
 
 pub fn main() {
@@ -34,21 +36,22 @@ const TOP_RIGHT: u8 = b'7';
 const BOTTOM_LEFT: u8 = b'L';
 const BOTTOM_RIGHT: u8 = b'J';
 
-struct Candidates {
-    v: Vec<Candidate>,
+struct Candidates<'a> {
+    v: VecDeque<Candidate>,
     width: usize,
     len: usize,
+    bytes: &'a [u8],
 }
 
 #[derive(Clone, Copy)]
 struct Candidate {
     count: u64,
     pos: usize,
-    skip: Skip,
+    came_from: Direction,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
-enum Skip {
+enum Direction {
     Left,
     Right,
     Top,
@@ -56,42 +59,62 @@ enum Skip {
     None,
 }
 
-impl Candidates {
+impl Candidates<'_> {
+    fn push(&mut self, new: Candidate) {
+        match (new.came_from, self.bytes[new.pos]) {
+            (Direction::Left, VERTICAL | TOP_LEFT | BOTTOM_LEFT) => {}
+            (Direction::Right, VERTICAL | TOP_RIGHT | BOTTOM_RIGHT) => {}
+            (Direction::Top, HORIZONTAL | TOP_LEFT | TOP_RIGHT) => {}
+            (Direction::Bottom, HORIZONTAL | BOTTOM_LEFT | BOTTOM_RIGHT) => {}
+            _ => self.v.push_back(new),
+        }
+    }
+
     fn push_left(&mut self, from: Candidate) {
-        if from.skip != Skip::Left && from.pos % self.width > 0 {
-            self.v
-                .push(Candidate::new(from.count + 1, from.pos - 1, Skip::Right));
+        if from.came_from != Direction::Left && from.pos % self.width > 0 {
+            self.push(Candidate::new(
+                from.count + 1,
+                from.pos - 1,
+                Direction::Right,
+            ));
         }
     }
     fn push_right(&mut self, from: Candidate) {
-        if from.skip != Skip::Right && (from.pos % self.width) < (self.width - 1) {
-            self.v
-                .push(Candidate::new(from.count + 1, from.pos + 1, Skip::Left));
+        if from.came_from != Direction::Right && (from.pos % self.width) < (self.width - 1) {
+            self.push(Candidate::new(
+                from.count + 1,
+                from.pos + 1,
+                Direction::Left,
+            ));
         }
     }
     fn push_top(&mut self, from: Candidate) {
-        if from.skip != Skip::Top && from.pos >= self.width {
-            self.v.push(Candidate::new(
+        if from.came_from != Direction::Top && from.pos >= self.width {
+            self.push(Candidate::new(
                 from.count + 1,
                 from.pos - self.width,
-                Skip::Bottom,
+                Direction::Bottom,
             ));
         }
     }
     fn push_bottom(&mut self, from: Candidate) {
-        if from.skip != Skip::Bottom && from.pos < (self.len - self.width) {
-            self.v.push(Candidate::new(
+        if from.came_from != Direction::Bottom && from.pos < (self.len - self.width) {
+            self.push(Candidate::new(
                 from.count + 1,
                 from.pos + self.width,
-                Skip::Top,
-            )); // BOTTOM
+                Direction::Top,
+            ));
         }
     }
 }
 
 impl Candidate {
-    fn new(count: u64, pos: usize, skip: Skip) -> Self {
-        Self { count, pos, skip }
+    fn new(count: u64, pos: usize, skip: Direction) -> Self {
+        Self {
+            count,
+            pos,
+            came_from: skip,
+        }
     }
 }
 
@@ -105,30 +128,51 @@ fn part1(input: &str) -> u64 {
         .filter(|&b| b != b'\n')
         .collect::<Vec<_>>();
 
-    let mut seen = bytes.iter().map(|_| false).collect::<Vec<_>>();
+    let mut seen = bytes.iter().map(|_| (0, false)).collect::<Vec<_>>();
 
     let s = bytes.iter().position(|&b| b == S).unwrap();
 
     let mut cs = Candidates {
-        v: Vec::new(),
+        v: VecDeque::new(),
         len: bytes.len(),
         width,
+        bytes: bytes.as_slice(),
     };
 
-    cs.v.push(Candidate {
+    cs.v.push_back(Candidate {
         count: 0,
         pos: s,
-        skip: Skip::None,
+        came_from: Direction::None,
     });
 
     let mut highest = 0;
 
-    while let Some(c) = cs.v.pop() {
-        if seen[c.pos] {
-            highest = highest.max(c.count - 1);
+    let print = false;
+
+    while let Some(c) = cs.v.pop_front() {
+        if print {
+            for (i, _) in bytes.as_slice().iter().enumerate() {
+                if (i as usize) % width == 0 {
+                    println!();
+                }
+                if c.pos == i {
+                    print!("NOW   ");
+                } else if cs.v.iter().any(|c| c.pos == i) {
+                    print!("CAND  ");
+                } else if seen[i].1 {
+                    print!("{:<5} ", seen[i].0);
+                } else {
+                    print!(".     ");
+                }
+            }
+            println!();
+        }
+
+        if seen[c.pos].1 {
+            highest = highest.max(seen[c.pos].0);
             break;
         }
-        seen[c.pos] = true;
+        seen[c.pos] = (c.count, true);
         match bytes[c.pos] {
             S => {
                 cs.push_left(c);
@@ -164,7 +208,19 @@ fn part1(input: &str) -> u64 {
             _ => panic!(),
         }
     }
-
+    if print {
+        for (i, _) in bytes.as_slice().iter().enumerate() {
+            if (i as usize) % width == 0 {
+                println!();
+            }
+            if seen[i].1 {
+                print!("{:<5} ", seen[i].0);
+            } else {
+                print!(".     ");
+            }
+        }
+        println!();
+    }
     highest
 }
 
@@ -177,7 +233,9 @@ helper::tests! {
     part1 {
         "../input_small11.txt" => 4;
         "../input_small12.txt" => 8;
-        "../input.txt" => 0;
+        "../input_small13.txt" => 11;
+        "../input_small14.txt" => 13;
+        "../input.txt" => 6903;
     }
     part2 {
         "../input.txt" => 0;
