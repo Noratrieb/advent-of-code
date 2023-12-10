@@ -118,7 +118,13 @@ impl Candidate {
     }
 }
 
-fn part1(input: &str) -> u64 {
+struct Loop {
+    step_map: Vec<(u64, bool)>,
+    target: usize,
+    highest_value: u64,
+}
+
+fn get_loop(input: &str) -> Loop {
     let bytes = input.as_bytes();
     let width = bytes.into_iter().position(|&b| b == b'\n').unwrap();
 
@@ -128,7 +134,7 @@ fn part1(input: &str) -> u64 {
         .filter(|&b| b != b'\n')
         .collect::<Vec<_>>();
 
-    let mut seen = bytes.iter().map(|_| (0, false)).collect::<Vec<_>>();
+    let mut step_map = bytes.iter().map(|_| (0, false)).collect::<Vec<_>>();
 
     let s = bytes.iter().position(|&b| b == S).unwrap();
 
@@ -145,9 +151,16 @@ fn part1(input: &str) -> u64 {
         came_from: Direction::None,
     });
 
-    let mut highest = 0;
+    let mut highest_value = 0;
 
     let print = false;
+
+    #[cfg(test)]
+    if print {
+        panic!("cannot test with print");
+    }
+
+    let mut target = usize::MAX;
 
     while let Some(c) = cs.v.pop_front() {
         if print {
@@ -159,8 +172,8 @@ fn part1(input: &str) -> u64 {
                     print!("NOW   ");
                 } else if cs.v.iter().any(|c| c.pos == i) {
                     print!("CAND  ");
-                } else if seen[i].1 {
-                    print!("{:<5} ", seen[i].0);
+                } else if step_map[i].1 {
+                    print!("{:<5} ", step_map[i].0);
                 } else {
                     print!(".     ");
                 }
@@ -168,11 +181,12 @@ fn part1(input: &str) -> u64 {
             println!();
         }
 
-        if seen[c.pos].1 {
-            highest = highest.max(seen[c.pos].0);
+        if step_map[c.pos].1 {
+            highest_value = highest_value.max(step_map[c.pos].0);
+            target = c.pos;
             break;
         }
-        seen[c.pos] = (c.count, true);
+        step_map[c.pos] = (c.count, true);
         match bytes[c.pos] {
             S => {
                 cs.push_left(c);
@@ -213,18 +227,33 @@ fn part1(input: &str) -> u64 {
             if (i as usize) % width == 0 {
                 println!();
             }
-            if seen[i].1 {
-                print!("{:<5} ", seen[i].0);
+            if step_map[i].1 {
+                print!("{:<5} ", step_map[i].0);
             } else {
                 print!(".     ");
             }
         }
         println!();
     }
-    highest
+
+    Loop {
+        step_map,
+        target,
+        highest_value,
+    }
+}
+
+fn part1(input: &str) -> u64 {
+    get_loop(input).highest_value
 }
 
 fn part2(_input: &str) -> u64 {
+    // Step 1: Find the loop
+    //         We do this by using the step-map from before, counting backwards from the target basically.
+    // Step 2: Cellular-automata-ish, start from the borders and start eating away
+    //         everything connected to that, only stopping at the main loop.
+    // Open question: How do we squeeze between main loop pipes?
+
     0
 }
 
