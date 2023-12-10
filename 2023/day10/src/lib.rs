@@ -59,6 +59,19 @@ enum Direction {
     None,
 }
 
+fn left(pos: usize, width: usize) -> Option<usize> {
+    (pos % width > 0).then(|| pos - 1)
+}
+fn right(pos: usize, width: usize) -> Option<usize> {
+    ((pos % width) < (width - 1)).then(|| pos + 1)
+}
+fn top(pos: usize, width: usize) -> Option<usize> {
+    (pos >= width).then(|| pos - width)
+}
+fn bottom(pos: usize, len: usize, width: usize) -> Option<usize> {
+    (pos < (len - width)).then(|| pos + width)
+}
+
 impl Candidates<'_> {
     fn push(&mut self, new: Candidate) {
         match (new.came_from, self.bytes[new.pos]) {
@@ -71,39 +84,31 @@ impl Candidates<'_> {
     }
 
     fn push_left(&mut self, from: Candidate) {
-        if from.came_from != Direction::Left && from.pos % self.width > 0 {
-            self.push(Candidate::new(
-                from.count + 1,
-                from.pos - 1,
-                Direction::Right,
-            ));
+        if from.came_from != Direction::Left {
+            if let Some(left) = left(from.pos, self.width) {
+                self.push(Candidate::new(from.count + 1, left, Direction::Right));
+            }
         }
     }
     fn push_right(&mut self, from: Candidate) {
-        if from.came_from != Direction::Right && (from.pos % self.width) < (self.width - 1) {
-            self.push(Candidate::new(
-                from.count + 1,
-                from.pos + 1,
-                Direction::Left,
-            ));
+        if from.came_from != Direction::Right {
+            if let Some(right) = right(from.pos, self.width) {
+                self.push(Candidate::new(from.count + 1, right, Direction::Left));
+            }
         }
     }
     fn push_top(&mut self, from: Candidate) {
-        if from.came_from != Direction::Top && from.pos >= self.width {
-            self.push(Candidate::new(
-                from.count + 1,
-                from.pos - self.width,
-                Direction::Bottom,
-            ));
+        if from.came_from != Direction::Top {
+            if let Some(top) = top(from.pos, self.width) {
+                self.push(Candidate::new(from.count + 1, top, Direction::Bottom));
+            }
         }
     }
     fn push_bottom(&mut self, from: Candidate) {
-        if from.came_from != Direction::Bottom && from.pos < (self.len - self.width) {
-            self.push(Candidate::new(
-                from.count + 1,
-                from.pos + self.width,
-                Direction::Top,
-            ));
+        if from.came_from != Direction::Bottom {
+            if let Some(bottom) = bottom(from.pos, self.bytes.len(), self.width) {
+                self.push(Candidate::new(from.count + 1, bottom, Direction::Top));
+            }
         }
     }
 }
@@ -247,12 +252,14 @@ fn part1(input: &str) -> u64 {
     get_loop(input).highest_value
 }
 
-fn part2(_input: &str) -> u64 {
+fn part2(input: &str) -> u64 {
     // Step 1: Find the loop
     //         We do this by using the step-map from before, counting backwards from the target basically.
     // Step 2: Cellular-automata-ish, start from the borders and start eating away
     //         everything connected to that, only stopping at the main loop.
     // Open question: How do we squeeze between main loop pipes?
+    let the_loop = get_loop(input);
+    let mut tiles = vec![0; the_loop.step_map.len()];
 
     0
 }
