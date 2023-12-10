@@ -39,7 +39,6 @@ const BOTTOM_RIGHT: u8 = b'J';
 struct Candidates<'a> {
     v: VecDeque<Candidate>,
     width: usize,
-    len: usize,
     bytes: &'a [u8],
 }
 
@@ -72,14 +71,20 @@ fn bottom(pos: usize, len: usize, width: usize) -> Option<usize> {
     (pos < (len - width)).then(|| pos + width)
 }
 
+fn points_to(byte: u8, direction: Direction) -> bool {
+    match (direction, byte) {
+        (Direction::Left, VERTICAL | TOP_LEFT | BOTTOM_LEFT) => false,
+        (Direction::Right, VERTICAL | TOP_RIGHT | BOTTOM_RIGHT) => false,
+        (Direction::Top, HORIZONTAL | TOP_LEFT | TOP_RIGHT) => false,
+        (Direction::Bottom, HORIZONTAL | BOTTOM_LEFT | BOTTOM_RIGHT) => false,
+        _ => true,
+    }
+}
+
 impl Candidates<'_> {
     fn push(&mut self, new: Candidate) {
-        match (new.came_from, self.bytes[new.pos]) {
-            (Direction::Left, VERTICAL | TOP_LEFT | BOTTOM_LEFT) => {}
-            (Direction::Right, VERTICAL | TOP_RIGHT | BOTTOM_RIGHT) => {}
-            (Direction::Top, HORIZONTAL | TOP_LEFT | TOP_RIGHT) => {}
-            (Direction::Bottom, HORIZONTAL | BOTTOM_LEFT | BOTTOM_RIGHT) => {}
-            _ => self.v.push_back(new),
+        if points_to(self.bytes[new.pos], new.came_from) {
+            self.v.push_back(new);
         }
     }
 
@@ -127,6 +132,8 @@ struct Loop {
     step_map: Vec<(u64, bool)>,
     target: usize,
     highest_value: u64,
+    width: usize,
+    bytes: Vec<u8>,
 }
 
 fn get_loop(input: &str) -> Loop {
@@ -145,7 +152,6 @@ fn get_loop(input: &str) -> Loop {
 
     let mut cs = Candidates {
         v: VecDeque::new(),
-        len: bytes.len(),
         width,
         bytes: bytes.as_slice(),
     };
@@ -158,33 +164,20 @@ fn get_loop(input: &str) -> Loop {
 
     let mut highest_value = 0;
 
-    let print = false;
-
-    #[cfg(test)]
-    if print {
-        panic!("cannot test with print");
-    }
-
     let mut target = usize::MAX;
 
     while let Some(c) = cs.v.pop_front() {
-        if print {
-            for (i, _) in bytes.as_slice().iter().enumerate() {
-                if (i as usize) % width == 0 {
-                    println!();
-                }
-                if c.pos == i {
-                    print!("NOW   ");
-                } else if cs.v.iter().any(|c| c.pos == i) {
-                    print!("CAND  ");
-                } else if step_map[i].1 {
-                    print!("{:<5} ", step_map[i].0);
-                } else {
-                    print!(".     ");
-                }
+        print(&step_map, width, |i, (count, seen)| {
+            if c.pos == i {
+                print!("NOW   ");
+            } else if cs.v.iter().any(|c| c.pos == i) {
+                print!("CAND  ");
+            } else if *seen {
+                print!("{:<5} ", count);
+            } else {
+                print!(".     ");
             }
-            println!();
-        }
+        });
 
         if step_map[c.pos].1 {
             highest_value = highest_value.max(step_map[c.pos].0);
@@ -227,29 +220,43 @@ fn get_loop(input: &str) -> Loop {
             _ => panic!(),
         }
     }
-    if print {
-        for (i, _) in bytes.as_slice().iter().enumerate() {
-            if (i as usize) % width == 0 {
-                println!();
-            }
-            if step_map[i].1 {
-                print!("{:<5} ", step_map[i].0);
-            } else {
-                print!(".     ");
-            }
+    print(&step_map, width, |_, (count, seen)| {
+        if *seen {
+            print!("{:<5} ", count);
+        } else {
+            print!(".     ");
         }
-        println!();
-    }
+    });
 
     Loop {
         step_map,
         target,
         highest_value,
+        width,
+        bytes,
     }
 }
 
 fn part1(input: &str) -> u64 {
     get_loop(input).highest_value
+}
+
+fn surroundings(pos: usize, width: usize, len: usize, byte: u8) -> impl Iterator<Item = usize> {
+    [
+        // TODO: also use these filters in part 1
+        left(pos, width).filter(|_| points_to(byte, Direction::Left)),
+        right(pos, width).filter(|_| points_to(byte, Direction::Right)),
+        top(pos, width).filter(|_| points_to(byte, Direction::Top)),
+        bottom(pos, len, width).filter(|_| points_to(byte, Direction::Bottom)),
+    ]
+    .into_iter()
+    .flatten()
+}
+
+#[derive(Clone, Copy)]
+enum State {
+    Empty,
+    Path,
 }
 
 fn part2(input: &str) -> u64 {
@@ -258,10 +265,57 @@ fn part2(input: &str) -> u64 {
     // Step 2: Cellular-automata-ish, start from the borders and start eating away
     //         everything connected to that, only stopping at the main loop.
     // Open question: How do we squeeze between main loop pipes?
-    let the_loop = get_loop(input);
-    let mut tiles = vec![0; the_loop.step_map.len()];
+    let Loop {
+        step_map,
+        target,
+        highest_value,
+        width,
+        bytes,
+    } = get_loop(input);
+    let mut tiles = vec![State::Empty; step_map.len()];
+
+    let mut start_surroundings = surroundings(target, width, bytes.len(), bytes[target])
+        .filter(|&pos| step_map[pos].1 && step_map[pos].0 == highest_value - 1);
+
+    tiles[target] = State::Path;
+
+    let mut a = start_surroundings.next().unwrap();
+    let mut b = start_surroundings.next().unwrap();
+    tiles[a] = State::Path;
+    tiles[b] = State::Path;
+    let mut value = highest_value - 1;
+
+    while value > 0 {
+        a = surroundings(a, width, bytes.len(), bytes[a])
+            .find(|&pos| step_map[pos].1 && step_map[pos].0 == value - 1)
+            .unwrap();
+        b = surroundings(b, width, bytes.len(), bytes[b])
+            .find(|&pos| step_map[pos].1 && step_map[pos].0 == value - 1)
+            .unwrap();
+        value -= 1;
+
+        tiles[a] = State::Path;
+        tiles[b] = State::Path;
+    }
+
+    print(&tiles, width, |i, state| match state {
+        State::Empty => print!("{}", bytes[i] as char),
+        State::Path => print!("\x1B[1;31m{}\x1B[1;0m", bytes[i] as char),
+    });
 
     0
+}
+
+fn print<T>(slice: &[T], width: usize, mut cell: impl FnMut(usize, &T)) {
+    if cfg!(not(test)) && cfg!(debug_assertions) {
+        for (i, elem) in slice.iter().enumerate() {
+            if i % width == 0 {
+                println!();
+            }
+            cell(i, elem);
+        }
+        println!();
+    }
 }
 
 helper::tests! {
@@ -274,6 +328,8 @@ helper::tests! {
         "../input.txt" => 6903;
     }
     part2 {
+        "../input_small21.txt" => 4;
+        "../input_small22.txt" => 4;
         "../input.txt" => 0;
     }
 }
