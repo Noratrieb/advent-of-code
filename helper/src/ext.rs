@@ -57,6 +57,13 @@ pub trait IteratorExt: Iterator {
 
         Ok(array)
     }
+
+    fn collect_vec(self) -> Vec<Self::Item>
+    where
+        Self: Sized,
+    {
+        self.collect()
+    }
 }
 
 impl<I: Iterator> IteratorExt for I {}
