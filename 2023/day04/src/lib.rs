@@ -2,8 +2,8 @@ mod p2ascii;
 mod p2cache;
 mod p2chunks;
 mod p2manual_slicing;
-mod p2vectorized;
 mod p2no_alloc;
+mod p2vectorized;
 
 use helper::{Day, Variants};
 
