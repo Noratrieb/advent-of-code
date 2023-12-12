@@ -97,6 +97,4 @@ helper::tests! {
         default => 28545089;
     }
 }
-helper::benchmarks! {
-
-}
+helper::benchmarks! {}

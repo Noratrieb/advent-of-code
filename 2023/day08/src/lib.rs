@@ -31,7 +31,6 @@ impl Day for Day08 {
     }
 }
 
-
 helper::tests! {
     day08 Day08;
     part1 {

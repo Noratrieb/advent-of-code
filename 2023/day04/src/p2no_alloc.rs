@@ -6,7 +6,7 @@ fn line_match_count(line: &str) -> usize {
         .split_whitespace()
         .collect::<arrayvec::ArrayVec<_, 16>>();
 
-        let you_have = numbers.next().unwrap().split_whitespace();
+    let you_have = numbers.next().unwrap().split_whitespace();
 
     you_have
         .filter(|have| winning.iter().any(|w| w == have))

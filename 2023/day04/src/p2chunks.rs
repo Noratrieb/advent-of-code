@@ -4,7 +4,11 @@ fn line_match_count(line: &str) -> usize {
         ((chunk[1] as u16) << 8) | (chunk[2] as u16)
     }
 
-    let mut numbers = line.split(|&b| b == b':').nth(1).unwrap().split(|&b| b == b'|');
+    let mut numbers = line
+        .split(|&b| b == b':')
+        .nth(1)
+        .unwrap()
+        .split(|&b| b == b'|');
     let winning = numbers
         .next()
         .unwrap()

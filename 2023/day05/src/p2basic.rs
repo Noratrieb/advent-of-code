@@ -46,7 +46,8 @@ pub fn part2(input: &str) -> u64 {
                 current_seeds.push((stage, range_idx + 1, post));
             }
             let offset = in_.start - range.source_start;
-            let new = (range.dest_start + offset)..(range.dest_start + offset + (in_.end - in_.start));
+            let new =
+                (range.dest_start + offset)..(range.dest_start + offset + (in_.end - in_.start));
 
             if !new.is_empty() {
                 current_seeds.push((stage + 1, 0, new));
