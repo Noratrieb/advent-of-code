@@ -49,13 +49,25 @@ struct Candidate {
     came_from: Direction,
 }
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Direction {
     Left,
     Right,
     Top,
     Bottom,
     None,
+}
+
+impl Direction {
+    fn adjacent(self) -> &'static [Self] {
+        match self {
+            Self::Left => &[Self::Top, Self::Bottom],
+            Self::Right => &[Self::Top, Self::Bottom],
+            Self::Top => &[Self::Left, Self::Right],
+            Self::Bottom => &[Self::Left, Self::Right],
+            Self::None => &[],
+        }
+    }
 }
 
 fn left(pos: usize, width: usize) -> Option<usize> {
@@ -242,33 +254,38 @@ fn part1(input: &str) -> u64 {
 }
 
 fn surroundings(pos: usize, width: usize, len: usize, byte: u8) -> impl Iterator<Item = usize> {
-    surroundings_opt(pos, width, len, byte).flatten()
+    all_surroundings(pos, width, len)
+        .flatten()
+        .filter(move |(d, _)| points_to(byte, *d))
+        .map(|(_, pos)| pos)
 }
-fn surroundings_opt(
+fn all_surroundings(
     pos: usize,
     width: usize,
     len: usize,
-    byte: u8,
-) -> impl Iterator<Item = Option<usize>> {
+) -> impl Iterator<Item = Option<(Direction, usize)>> {
     [
         // TODO: also use these filters in part 1
-        left(pos, width).filter(|_| points_to(byte, Direction::Left)),
-        right(pos, width).filter(|_| points_to(byte, Direction::Right)),
-        top(pos, width).filter(|_| points_to(byte, Direction::Top)),
-        bottom(pos, len, width).filter(|_| points_to(byte, Direction::Bottom)),
+        left(pos, width).map(|pos| (Direction::Left, pos)),
+        right(pos, width).map(|pos| (Direction::Right, pos)),
+        top(pos, width).map(|pos| (Direction::Top, pos)),
+        bottom(pos, len, width).map(|pos| (Direction::Bottom, pos)),
     ]
     .into_iter()
 }
 
-#[derive(Clone, Copy, PartialEq, Eq)]
-enum State {
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+enum Cell {
+    #[default]
     Empty,
     Path,
     Outside,
-    OpenLeft,
-    OpenRight,
-    OpenTop,
-    OpenBottom,
+}
+
+#[derive(Clone, Copy, Default)]
+struct State {
+    cell: Cell,
+    sqeeze: [bool; 4],
 }
 
 fn part2(input: &str) -> u64 {
@@ -284,15 +301,15 @@ fn part2(input: &str) -> u64 {
         width,
         bytes,
     } = get_loop(input);
-    let mut tiles = vec![State::Empty; step_map.len()];
+    let mut tiles = vec![State::default(); step_map.len()];
 
     let mut start_surroundings = surroundings(target, width, bytes.len(), bytes[target])
         .filter(|&pos| step_map[pos].1 && step_map[pos].0 == highest_value - 1);
 
-    tiles[target] = State::Path;
+    tiles[target].cell = Cell::Path;
 
     let mut ab = start_surroundings.collect_array::<2>().unwrap();
-    ab.iter().for_each(|&a| tiles[a] = State::Path);
+    ab.iter().for_each(|&a| tiles[a].cell = Cell::Path);
     let mut value = highest_value - 1;
 
     while value > 0 {
@@ -303,7 +320,7 @@ fn part2(input: &str) -> u64 {
         });
         value -= 1;
 
-        ab.iter().for_each(|&a| tiles[a] = State::Path);
+        ab.iter().for_each(|&a| tiles[a].cell = Cell::Path);
     }
 
     print_tiles(&tiles, width, &bytes);
@@ -315,40 +332,63 @@ fn part2(input: &str) -> u64 {
         std::thread::sleep(std::time::Duration::from_secs(1));
 
         for i in 0..tiles.len() {
+            let byte = bytes[i];
             let before = tiles[i];
-            if before != State::Empty {
-                continue;
-            }
 
-            for around in surroundings_opt(i, width, bytes.len(), bytes[i]) {
+            for around in all_surroundings(i, width, bytes.len()) {
                 // TODO: squeeeeze
                 match around {
-                    None => {
-                        tiles[i] = State::Outside;
+                    None if before.cell == Cell::Empty => {
+                        tiles[i].cell = Cell::Outside;
                         changed = true;
                     }
-                    Some(around) => {
-                        if tiles[around] == State::Outside {
-                            tiles[i] = State::Outside;
+                    None => {}
+                    Some((_, around)) if before.cell == Cell::Empty => {
+                        if tiles[around].cell == Cell::Outside {
+                            tiles[i].cell = Cell::Outside;
                             changed = true;
                         }
                     }
+                    Some((direction, around)) if before.cell == Cell::Path => {
+                        println!("path {i} {:?}", tiles[around].cell);
+                        if tiles[around].cell == Cell::Outside {
+                            println!("checking {direction:?}");
+                            if !points_to(byte, direction) {
+                                for &adjacent in direction.adjacent() {
+                                    if !points_to(byte, adjacent) {
+                                        println!("sq");
+                                        tiles[i].sqeeze[adjacent as usize] = true;
+                                    }
+                                }
+                            }
+                        } else if tiles[around].cell == Cell::Path {
+                            // continue the sqeeze
+                            
+                        }
+                    }
+                    _ => {}
                 }
             }
         }
         print_tiles(&tiles, width, &bytes);
     }
 
-    tiles.iter().filter(|&&state| state == State::Empty).count() as u64
+    tiles
+        .iter()
+        .filter(|&&state| state.cell == Cell::Empty)
+        .count() as u64
 }
 
 fn print_tiles(tiles: &[State], width: usize, bytes: &[u8]) {
     print(&tiles, width, |i, state| {
         let c = fancy_char(bytes[i]);
-        match state {
-            State::Empty => print!("{c}"),
-            State::Path => print!("\x1B[1;31m{c}\x1B[1;0m"),
-            State::Outside => print!("\x1B[1;34m{c}\x1B[1;0m"),
+        match state.cell {
+            Cell::Empty => print!("{c}"),
+            Cell::Path if state.sqeeze.iter().any(|&sq| sq) => {
+                print!("\x1B[1;32m{c}\x1B[1;0m")
+            }
+            Cell::Path => print!("\x1B[1;31m{c}\x1B[1;0m"),
+            Cell::Outside => print!("\x1B[1;34m{c}\x1B[1;0m"),
             _ => print!("\x1B[1;33m{c}\x1B[1;0m"),
         }
     });
