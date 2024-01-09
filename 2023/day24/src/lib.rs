@@ -29,6 +29,7 @@ impl Day for Day24 {
 struct Vector {
     x: i64,
     y: i64,
+    #[allow(dead_code)]
     z: i64,
 }
 
@@ -77,12 +78,10 @@ fn part1(input: &str) -> u64 {
             let (pos, vel) = parse(line);
 
             let x1 = pos.x;
-            let x2 = pos.x + vel.x;
             let y1 = pos.y;
-            let y2 = pos.y + vel.y;
 
-            let delta_x = (x2 - x1).abs() as f64;
-            let delta_y = (y2 - y1).abs() as f64;
+            let delta_x = vel.x as f64;
+            let delta_y = vel.y as f64;
 
             // f(x) = ax + b
 
@@ -98,13 +97,20 @@ fn part1(input: &str) -> u64 {
 
     let mut total = 0;
 
+    let range = if paths.len() > 100 {
+        200000000000000.0..400000000000000.0
+    } else {
+        7.0..27.0
+    };
+
     // TODO: i dont think floats are gonna work....
     for (i, stone) in paths.iter().enumerate() {
-        let candidates = &paths[i..];
-        for candidate in candidates {
-            if let Some((x, y)) = dbg!(intersect(stone.0, stone.1, candidate.0, candidate.1)) {
-                let range = 200000000000000.0..400000000000000.0;
+        let candidates = &paths[(i + 1)..];
+        for (j, candidate) in candidates.iter().enumerate() {
+            if let Some((x, y)) = intersect(stone.0, stone.1, candidate.0, candidate.1) {
+                // TODO: check for past, only the future matters
                 if range.contains(&x) && range.contains(&y) {
+                    dbg!((i, j, x, y));
                     total += 1;
                 }
             }
