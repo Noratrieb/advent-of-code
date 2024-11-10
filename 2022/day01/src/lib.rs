@@ -1,3 +1,5 @@
+#![feature(iter_array_chunks)]
+
 use helper::{parse_unwrap, Day, Variants};
 
 pub fn main() {
@@ -12,7 +14,8 @@ helper::define_variants! {
         basic => crate::part1;
     }
     part2 {
-        basic => crate::part2;
+        basic => crate::part2_basic;
+        no_alloc => crate::part2_no_alloc;
     }
 }
 
@@ -35,7 +38,7 @@ fn part1(input: &str) -> u64 {
         .unwrap()
 }
 
-fn part2(input: &str) -> u64 {
+fn part2_basic(input: &str) -> u64 {
     let mut all = input
         .trim()
         .split("\n\n")
@@ -43,6 +46,35 @@ fn part2(input: &str) -> u64 {
         .collect::<Vec<u64>>();
     all.sort();
     all[(all.len() - 3)..].iter().copied().sum::<u64>()
+}
+
+
+fn part2_no_alloc(input: &str) -> u64 {
+    let mut biggest = [0; 3];
+
+    let elves = input
+        .trim()
+        .split("\n\n")
+        .map(|elf| elf.trim().split("\n").map(parse_unwrap).sum::<u64>());
+
+    for elf in elves {
+        if elf > biggest[0] {
+            if elf > biggest[1] {
+                if elf > biggest[2] {
+                    biggest[0] = biggest[1];
+                    biggest[1] = biggest[2];
+                    biggest[2] = elf;
+                } else {
+                    biggest[0] = biggest[1];
+                    biggest[1] = elf;
+                }
+            } else {
+                biggest[0] = elf;
+            }
+        }
+    }
+
+    biggest[0] + biggest[1] + biggest[2]
 }
 
 helper::tests! {
