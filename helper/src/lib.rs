@@ -1,10 +1,12 @@
 mod cmd;
 mod ext;
+mod hash;
 
 use std::{borrow::Cow, fmt::Debug};
 
 pub use self::cmd::main;
 pub use self::ext::*;
+pub use self::hash::*;
 
 pub type Solution = fn(&str) -> u64;
 
