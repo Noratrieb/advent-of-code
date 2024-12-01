@@ -127,10 +127,7 @@ fn part2_parsing(input: &str) -> u64 {
         let number = input[..space].parse::<u64>().unwrap();
         *right_map.entry(number).or_default() += 1;
         input = &input[newline..];
-        // handle lack of trailing newline
-        if !input.is_empty() {
-            input = &input[1..];
-        }
+        input = &input[1..];
     }
 
     let mut score = 0;
@@ -162,10 +159,8 @@ fn part2_array(input: &str) -> u64 {
         let number = input[..space].parse::<u64>().unwrap();
         right_map[number as usize] += 1;
         input = &input[newline..];
-        // handle lack of trailing newline
-        if !input.is_empty() {
-            input = &input[1..];
-        }
+
+        input = &input[1..];
     }
 
     let mut score = 0;
