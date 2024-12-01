@@ -10,7 +10,7 @@ function get_cookie {
     cat aoc_cookie
 }
 
-year=2022
+year=2024
 : "${1:?usage: ./aoc.sh new}"
 
 case "$1" in
