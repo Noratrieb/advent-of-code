@@ -46,6 +46,7 @@ helper::define_variants! {
         clubby => crate::part2_clubby;
         part2_max397 => crate::part2_max397;
         bendn => crate::part2_bendn;
+        symmetriccats => crate::p2;
     }
 }
 
@@ -549,6 +550,45 @@ fn part2_max397(input: &str) -> u64 {
 
     part2(input)
 }
+
+
+pub fn p2(input: &str) -> u64 {
+    let (a, b) = parse_input_fast(input).unwrap();
+ 
+    let seen = a.iter().copied().collect::<rustc_hash::FxHashSet<_>>();
+    b.iter()
+        .fold(0, |acc, &val| acc + val * seen.contains(&val) as u32) as u64
+}
+ 
+pub fn parse_input_fast(input: &str) -> Result<(Vec<u32>, Vec<u32>), Box<dyn std::error::Error>> {
+    const LINE_LENGTH: usize = 14;
+ 
+    let elements = input.len() / LINE_LENGTH;
+    let mut x = vec![0; elements];
+    let mut y = vec![0; elements];
+ 
+    for line in input.as_bytes().chunks_exact(LINE_LENGTH) {
+        let a0 = (line[0] - b'0') as u32 * 10_000;
+        let a1 = (line[1] - b'0') as u32 * 1_000;
+        let a2 = (line[2] - b'0') as u32 * 100;
+        let a3 = (line[3] - b'0') as u32 * 10;
+        let a4 = (line[4] - b'0') as u32 * 1;
+        let a = a0 + a1 + a2 + a3 + a4;
+ 
+        let b0 = (line[8] - b'0') as u32 * 10_000;
+        let b1 = (line[9] - b'0') as u32 * 1_000;
+        let b2 = (line[10] - b'0') as u32 * 100;
+        let b3 = (line[11] - b'0') as u32 * 10;
+        let b4 = (line[12] - b'0') as u32 * 1;
+        let b = b0 + b1 + b2 + b3 + b4;
+ 
+        x.push(a);
+        y.push(b);
+    }
+ 
+    Ok((x, y))
+}
+ 
 
 pub fn part2_bendn(i: &str) -> u64 {
     use util::Widen;
