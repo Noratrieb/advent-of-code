@@ -1,3 +1,4 @@
+#![feature(portable_simd)]
 use core::str;
 use std::{collections::HashMap, hash::BuildHasherDefault};
 
@@ -16,15 +17,17 @@ helper::define_variants! {
         basic => crate::part1;
     }
     part2 {
-        basic => crate::part2;
-        hash => crate::part2_hash;
-        hash_no_hash => crate::part2_hash_nohash;
-        faster_parsing => crate::part2_parsing;
-        array => crate::part2_array;
-        μopt_parsing => crate::part2_μopt_parsing;
-        bytes => crate::part2_bytes;
-        assume_len => crate::part2_assume_len;
-        simd => crate::part2_simd;
+        //basic => crate::part2;
+        //hash => crate::part2_hash;
+        //hash_no_hash => crate::part2_hash_nohash;
+        //faster_parsing => crate::part2_parsing;
+        //array => crate::part2_array;
+        //μopt_parsing => crate::part2_μopt_parsing;
+        //bytes => crate::part2_bytes;
+        //assume_len => crate::part2_assume_len;
+        nora => crate::part2_simd;
+        clubby => crate::part2_clubby;
+        part2_max397 => crate::part2_max397;
     }
 }
 
@@ -387,6 +390,146 @@ fn part2_simd(input_str: &str) -> u64 {
 
         score as u64
     }
+}
+
+pub fn part2_clubby(input: &str) -> u64 {
+    use std::{
+        hint::assert_unchecked,
+        simd::{num::SimdUint, LaneCount, Simd, SupportedLaneCount},
+    };
+
+    fn for_each_line<F>(input: &str, mut f: F)
+    where
+        F: FnMut(u64, u64),
+    {
+        let mut input = input.as_bytes();
+        let line_length = memchr::memchr(b'\n', input).unwrap();
+        // Length of first column
+        let first_col_len = memchr::memchr(b' ', &input[..line_length]).unwrap();
+        // SAFETY: `memchr` returns a value less than the length
+        unsafe { assert_unchecked(first_col_len < line_length) };
+
+        // Offset from start to second column
+        let second_col_offset = memchr::memrchr(b' ', &input[..line_length]).unwrap() + 1;
+        // SAFETY: `memchr` returns a value less than the length
+        unsafe { assert_unchecked(second_col_offset < line_length) };
+        assert!(second_col_offset > first_col_len);
+
+        while !input.is_empty() {
+            assert!(input.len() > line_length);
+
+            let (num1, num2) =
+                parse_line_simd(input, first_col_len, second_col_offset, line_length);
+            f(num1, num2);
+            input = &input[line_length + 1..];
+        }
+    }
+
+    fn parse_line_simd(
+        input: &[u8],
+        first_col_len: usize,
+        second_col_offset: usize,
+        line_length: usize,
+    ) -> (u64, u64) {
+        assert!(input.len() >= second_col_offset);
+        assert!(input.len() >= first_col_len);
+        assert!(input.len() >= line_length);
+
+        match (first_col_len, second_col_offset, line_length) {
+            (5, 8, 13) => (
+                simd_parse_start::<8, 5>(input[..second_col_offset].try_into().unwrap()),
+                simd_parse_end::<8, 3>(input[first_col_len..line_length].try_into().unwrap()),
+            ),
+            (1, 4, 5) => (
+                simd_parse_start::<4, 1>(input[..second_col_offset].try_into().unwrap()),
+                simd_parse_end::<4, 3>(input[first_col_len..line_length].try_into().unwrap()),
+            ),
+            _ => unimplemented!(),
+        }
+    }
+
+    fn simd_parse_start<const INP_LEN: usize, const NUM_SIZE: usize>(line: &[u8; INP_LEN]) -> u64
+    where
+        LaneCount<INP_LEN>: SupportedLaneCount,
+    {
+        let multipliers = Simd::from(std::array::from_fn(|i| 10u64.pow(i as u32))).reverse();
+        let mask = Simd::from(std::array::from_fn(
+            |i| if i < NUM_SIZE { u64::MAX } else { 0 },
+        ));
+        let line = Simd::<u8, INP_LEN>::load_or_default(line);
+        let digits = line - Simd::splat(b'0');
+        let digits: Simd<u64, INP_LEN> = digits.cast();
+        let digits = digits & mask;
+        (digits * multipliers).reduce_sum() / 10u64.pow((INP_LEN - NUM_SIZE) as u32)
+    }
+
+    fn simd_parse_end<const INP_LEN: usize, const GAP_LEN: usize>(line: &[u8; INP_LEN]) -> u64
+    where
+        LaneCount<INP_LEN>: SupportedLaneCount,
+    {
+        let multipliers = Simd::from(std::array::from_fn(|i| 10u64.pow(i as u32))).reverse();
+        let mask = Simd::from(std::array::from_fn(
+            |i| if i >= GAP_LEN { u64::MAX } else { 0 },
+        ));
+        let line = Simd::<u8, INP_LEN>::load_or_default(line);
+        let digits = line - Simd::splat(b'0');
+        let digits: Simd<u64, INP_LEN> = digits.cast();
+        let digits = digits & mask;
+        (digits * multipliers).reduce_sum()
+    }
+
+    let mut num_counts = vec![0u16; 99999];
+    let line_length = memchr::memchr(b'\n', input.as_bytes()).unwrap();
+    let lines = input.len() / line_length;
+    let mut appeared = Vec::with_capacity(lines);
+
+    for_each_line(input, |num1, num2| {
+        appeared.push(num1);
+        num_counts[num2 as usize] += 1;
+    });
+    appeared
+        .iter()
+        .map(|&num| num * num_counts[num as usize] as u64)
+        .sum()
+}
+
+fn part2_max397(input: &str) -> u64 {
+    use bstr::ByteSlice;
+
+    pub fn part2(input: &str) -> u64 {
+        let input = input.as_bytes();
+        let mut col1: Vec<usize> = Vec::with_capacity(1000);
+        let mut counts: [u16; 100000] = [0; 100000];
+        let idx1 = unsafe { input.find_byte(b' ').unwrap_unchecked() };
+        let idx2 = idx1 + 3;
+        let idx3 = idx1 + idx2;
+        input.lines().for_each(|line| {
+            col1.push(line[0..idx1].as_num());
+            counts[line[idx2..idx3].as_num::<usize>()] += 1;
+        });
+
+        col1.iter()
+            .map(|num| num * counts[*num] as usize)
+            .sum::<usize>() as u64
+    }
+    // the parsing
+    use num_traits::PrimInt;
+
+    pub trait ByteParsing {
+        fn as_num<T: PrimInt>(&self) -> T;
+    }
+
+    impl ByteParsing for [u8] {
+        fn as_num<T: PrimInt>(&self) -> T {
+            let mut out = T::zero();
+            for byte in self {
+                out = out * T::from(10).unwrap() + T::from(byte - b'0').unwrap();
+            }
+            out
+        }
+    }
+
+    part2(input)
 }
 
 helper::tests! {
