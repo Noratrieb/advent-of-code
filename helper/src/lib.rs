@@ -97,7 +97,7 @@ macro_rules! construct_variants {
     ( $day:ty; $( ($name:ident, $func:expr, [ $($_:tt)* ]) ),*) => {
         $crate::Variants {
             variants: vec![$(
-                $crate::Variant::new(stringify!($name), $func)
+                $crate::Variant::new(stringify!($name), std::hint::black_box($func))
             ),*]
         }
     };
