@@ -128,6 +128,7 @@ version = "0.1.0"
 dependencies = [
  "divan",
  "helper",
+ "memchr",
  "nom",
 ]
 

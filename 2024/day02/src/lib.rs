@@ -14,6 +14,8 @@ helper::define_variants! {
     part2 {
         basic => crate::part2;
         fast_parse => crate::part2_fast_parse;
+        keep_vec => crate::part2_keep_vec;
+        even_faster_parsing => crate::part2_even_faster_parsing;
     }
 }
 
@@ -173,6 +175,223 @@ fn part2_fast_parse(input: &str) -> u64 {
 
         let check_direction = |forwards| {
             let mut unsafe_transitions = vec![];
+            for (i, ab) in levels.windows(2).enumerate() {
+                if !check_asc_desc(forwards, ab[0], ab[1]) {
+                    unsafe_transitions.push(i);
+                }
+            }
+            match unsafe_transitions.len() {
+                0 => true,
+                1 => {
+                    // 1 3 2 4 5
+                    //    ^unsafe transition, index 1
+                    // either idx 1 needs to go, or idx 2 needs to go (in this case 1)
+                    let trans = unsafe_transitions[0];
+                    if trans == 0 || trans == (levels.len() - 2) {
+                        // It's the first or last element.
+                        return true;
+                    }
+
+                    // Let's see what happens if we drop the first element (3 in the example).
+                    if check_asc_desc(forwards, levels[trans - 1], levels[trans + 1]) {
+                        // Dropping the first elem works!
+                        return true;
+                    }
+
+                    // Let's see what happens if we drop the second element (2 in the example).
+                    if check_asc_desc(forwards, levels[trans], levels[trans + 2]) {
+                        // Dropping the secnd elem works!
+                        return true;
+                    }
+
+                    false
+                }
+                2 => {
+                    // 1 5 3 4 5
+                    //  ^ ^ unsafe transitions, idx 0 and 1
+                    // If the two transitions are not adjacent, there's no hope.
+                    let (trans0, trans1) = (unsafe_transitions[0], unsafe_transitions[1]);
+                    if trans0.abs_diff(trans1) != 1 {
+                        return false;
+                    }
+
+                    // Let's try dropping the middle one.
+                    let min = trans0.min(trans1);
+                    if check_asc_desc(forwards, levels[min], levels[min + 2]) {
+                        // Dropping it works!
+                        return true;
+                    }
+
+                    false
+                }
+                _ => false,
+            }
+        };
+
+        if check_direction(true) || check_direction(false) {
+            count += 1;
+        }
+
+        levels.clear();
+        input = &input[(end + 1)..];
+    }
+
+    count
+}
+
+fn part2_keep_vec(input: &str) -> u64 {
+    let mut levels = Vec::<u64>::new();
+    let mut unsafe_transitions = vec![];
+
+    let mut count = 0;
+
+    let mut input = input.as_bytes();
+    while let Some(end) = input.iter().position(|b| *b == b'\n') {
+        let mut line = &input[..end];
+
+        fn parse_digit(input: &[u8]) -> (u64, &[u8]) {
+            let mut result = 0;
+            let mut i = 0;
+            while input.len() > i && input[i].is_ascii_digit() {
+                result *= 10;
+                result += (input[i] - b'0') as u64;
+                i += 1;
+            }
+            (result, &input[i..])
+        }
+
+        let mut level;
+        (level, line) = parse_digit(line);
+        levels.push(level);
+
+        while line.len() > 0 {
+            line = &line[1..]; // space
+            (level, line) = parse_digit(line);
+            levels.push(level);
+        }
+
+        // Calculate
+        let check_asc_desc = |forwards, smol, big| {
+            if forwards {
+                smol < big && smol + 3 >= big
+            } else {
+                big < smol && big + 3 >= smol
+            }
+        };
+
+        let mut check_direction = |forwards| {
+            unsafe_transitions.clear();
+            for (i, ab) in levels.windows(2).enumerate() {
+                if !check_asc_desc(forwards, ab[0], ab[1]) {
+                    unsafe_transitions.push(i);
+                }
+            }
+            match unsafe_transitions.len() {
+                0 => true,
+                1 => {
+                    // 1 3 2 4 5
+                    //    ^unsafe transition, index 1
+                    // either idx 1 needs to go, or idx 2 needs to go (in this case 1)
+                    let trans = unsafe_transitions[0];
+                    if trans == 0 || trans == (levels.len() - 2) {
+                        // It's the first or last element.
+                        return true;
+                    }
+
+                    // Let's see what happens if we drop the first element (3 in the example).
+                    if check_asc_desc(forwards, levels[trans - 1], levels[trans + 1]) {
+                        // Dropping the first elem works!
+                        return true;
+                    }
+
+                    // Let's see what happens if we drop the second element (2 in the example).
+                    if check_asc_desc(forwards, levels[trans], levels[trans + 2]) {
+                        // Dropping the secnd elem works!
+                        return true;
+                    }
+
+                    false
+                }
+                2 => {
+                    // 1 5 3 4 5
+                    //  ^ ^ unsafe transitions, idx 0 and 1
+                    // If the two transitions are not adjacent, there's no hope.
+                    let (trans0, trans1) = (unsafe_transitions[0], unsafe_transitions[1]);
+                    if trans0.abs_diff(trans1) != 1 {
+                        return false;
+                    }
+
+                    // Let's try dropping the middle one.
+                    let min = trans0.min(trans1);
+                    if check_asc_desc(forwards, levels[min], levels[min + 2]) {
+                        // Dropping it works!
+                        return true;
+                    }
+
+                    false
+                }
+                _ => false,
+            }
+        };
+
+        if check_direction(true) || check_direction(false) {
+            count += 1;
+        }
+
+        levels.clear();
+        input = &input[(end + 1)..];
+    }
+
+    count
+}
+
+fn part2_even_faster_parsing(input: &str) -> u64 {
+    let mut levels = Vec::<u64>::new();
+    let mut unsafe_transitions = vec![];
+
+    let mut count = 0;
+
+    let mut input = input.as_bytes();
+    while let Some(end) = memchr::memchr(b'\n', input) {
+        let mut line = &input[..=end]; // include the newline so every digit has a terminator
+
+        fn parse_digit(input: &[u8]) -> (u64, &[u8]) {
+            assert!(input.len() > 1);
+            let first = input[0];
+            let second = input[1];
+
+            if second == b' ' || second == b'\n' {
+                ((first - b'0') as u64, &input[1..])
+            } else {
+                (
+                    (((first - b'0') * 10) + (second - b'0')) as u64,
+                    &input[2..],
+                )
+            }
+        }
+
+        let mut level;
+        (level, line) = parse_digit(line);
+        levels.push(level);
+        line = &line[1..]; // space or newline
+
+        while line.len() > 0 {
+            (level, line) = parse_digit(line);
+            levels.push(level);
+            line = &line[1..]; // space or newline
+        }
+
+        // Calculate
+        let check_asc_desc = |forwards, smol, big| {
+            if forwards {
+                smol < big && smol + 3 >= big
+            } else {
+                big < smol && big + 3 >= smol
+            }
+        };
+
+        let mut check_direction = |forwards| {
+            unsafe_transitions.clear();
             for (i, ab) in levels.windows(2).enumerate() {
                 if !check_asc_desc(forwards, ab[0], ab[1]) {
                     unsafe_transitions.push(i);
