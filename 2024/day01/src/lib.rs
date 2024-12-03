@@ -307,11 +307,8 @@ fn part2_assume_len(input_str: &str) -> u64 {
 }
 
 fn part2_simd(input_str: &str) -> u64 {
-    const DIGIT_LEN: usize = 5;
     let input = input_str.as_bytes();
     assert_eq!(input.last(), Some(&b'\n'));
-
-    const BIGGEST_ELEMENT: usize = 100_000;
 
     let digit_len = input.iter().position(|b| *b == b' ').unwrap();
 
@@ -331,6 +328,9 @@ fn part2_simd(input_str: &str) -> u64 {
     }
     #[cfg(target_arch = "x86_64")]
     pub fn do_sse41(input: &[u8]) -> u64 {
+        const DIGIT_LEN: usize = 5;
+        const BIGGEST_ELEMENT: usize = 100_000;
+
         let mut right_map = vec![0_u16; BIGGEST_ELEMENT];
         let mut left = Vec::<u32>::with_capacity(input.len());
 
