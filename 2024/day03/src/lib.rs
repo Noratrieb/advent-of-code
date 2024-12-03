@@ -74,8 +74,66 @@ fn part1(input: &str) -> u64 {
     total
 }
 
-fn part2(_input: &str) -> u64 {
-    0
+fn part2(input: &str) -> u64 {
+    let mut input = input.as_bytes();
+    let mut total = 0;
+
+    fn parse_digit(input: &[u8]) -> Option<(u64, &[u8])> {
+        let mut result = 0;
+        let mut i = 0;
+        while input.len() > i && input[i].is_ascii_digit() {
+            result *= 10;
+            result += (input[i] - b'0') as u64;
+            i += 1;
+        }
+        if i == 0 {
+            return None;
+        }
+        Some((result, &input[i..]))
+    }
+
+
+    fn try_parse_mul(mut input: &[u8]) -> Option<(&[u8], u64)> {
+        if input.get(..4) != Some(b"mul(") {
+            return None;
+        }
+
+        input = &input.get(4..)?;
+        let (a, b);
+        (a, input) = parse_digit(input)?;
+        if input.get(0) != Some(&b',') {
+            return None;
+        }
+        input = &input[1..];
+        (b, input) = parse_digit(input)?;
+        if input.get(0) != Some(&b')') {
+            return None;
+        }
+        input = &input[1..];
+        Some((input, a * b))
+    }
+
+    let mut enabled = true;
+
+    while !input.is_empty() {
+        if input.starts_with(b"do()") {
+            enabled = true;
+            input = &input[4..];
+        }
+        if input.starts_with(b"don't()") {
+            enabled = false;
+            input = &input[7..];
+        }
+        match try_parse_mul(input) {
+            Some((new_input, val)) if enabled => {
+                total += val;
+                input = new_input;
+            }
+            _ => input = &input[1..]
+        }
+    }
+
+    total
 }
 
 helper::tests! {
@@ -85,8 +143,8 @@ helper::tests! {
         default => 187833789;
     }
     part2 {
-        small => 0;
-        default => 0;
+        small => 48;
+        default => 94455185;
     }
 }
 helper::benchmarks! {}
