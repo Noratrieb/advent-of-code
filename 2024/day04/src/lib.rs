@@ -477,25 +477,25 @@ fn part2_reading(input: &str) -> u64 {
         #[rustfmt::skip]
         const XMAS_COMBINATIONS: &[(u64, u8)] = &[
             (u64::from_le_bytes([
-                b'M',   0, b'S',
+                b'S',   0, b'M',
                 0, b'A',  0,
-                b'M',   0,
-            ]), b'S'),
-            (u64::from_le_bytes([
-                b'M',   0, b'M',
-                0, b'A',  0,
-                b'S',   0,
-            ]), b'S'),
+                b'S',   0
+            ]), b'M'),
             (u64::from_le_bytes([
                 b'S',   0, b'S',
                 0, b'A',  0,
                 b'M',   0
             ]), b'M'),
             (u64::from_le_bytes([
-                b'S',   0, b'M',
+                b'M',   0, b'M',
                 0, b'A',  0,
-                b'S',   0
-            ]), b'M'),
+                b'S',   0,
+            ]), b'S'),
+            (u64::from_le_bytes([
+                b'M',   0, b'S',
+                0, b'A',  0,
+                b'M',   0,
+            ]), b'S'),
         ];
 
         let all = input.as_bytes();
@@ -531,28 +531,24 @@ fn part2_reading(input: &str) -> u64 {
                     .cast::<u32>()
                     .read_unaligned() as u64;
 
-                let int = (chunk_top & 0xFFFFFF)
-                    | ((chunk_mid & 0xFFFFFF) << 24)
-                    | ((chunk_bot & 0xFFFFFF) << 24 * 2);
+                let int = (chunk_top & 0xFF00FF)
+                    | ((chunk_mid & 0x00FF00) << 24)
+                    | ((chunk_bot & 0xFF00FF) << (24 * 2));
 
-                let to_test = x86_64::_mm256_set1_epi64x(
-                    (int & 0xFF00FF_00FF00_FF00_u64.swap_bytes()) as i64,
-                );
+                let to_test = x86_64::_mm256_set1_epi64x(int as i64);
 
                 let eq = x86_64::_mm256_cmpeq_epi64(to_test, combinations);
 
-                let movmask = x86_64::_mm256_movemask_epi8(eq);
+                let movmask = x86_64::_mm256_movemask_epi8(eq) as u32;
                 if movmask != 0 {
-                    let check = match movmask as u32 {
-                        0xFF000000 => XMAS_COMBINATIONS[0].1,
-                        0x00FF0000 => XMAS_COMBINATIONS[1].1,
-                        0x0000FF00 => XMAS_COMBINATIONS[2].1,
-                        0x000000FF => XMAS_COMBINATIONS[3].1,
-                        _ => unreachable!(),
-                    };
-                    if check == ((chunk_bot >> 16) & 0xFF) as u8 {
-                        count += 1;
-                    }
+                    let masked_selected = u32::from_be_bytes([
+                        XMAS_COMBINATIONS[0].1,
+                        XMAS_COMBINATIONS[1].1,
+                        XMAS_COMBINATIONS[2].1,
+                        XMAS_COMBINATIONS[3].1,
+                    ]) & movmask;
+                    let check = masked_selected >> masked_selected.trailing_zeros();
+                    count += (check as u8 == ((chunk_bot >> 16) & 0xFF) as u8) as u64;
                 }
 
                 i += 1;
