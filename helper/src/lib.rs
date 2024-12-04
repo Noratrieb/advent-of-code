@@ -69,6 +69,21 @@ pub fn test_part2<D: Day>(inputs: &[(&str, u64)]) {
 }
 
 #[macro_export]
+macro_rules! only_x86_64_and {
+    ($feature:tt => $input:ident, $fast:ident else $fallback:ident) => {
+        #[cfg(not(target_arch = "x86_64"))]
+        return $fallback($input);
+        #[cfg(target_arch = "x86_64")]
+        {
+            if !std::arch::is_x86_feature_detected!($feature) {
+                return $fallback($input);
+            }
+            return unsafe { $fast($input) };
+        }
+    };
+}
+
+#[macro_export]
 macro_rules! define_variants {
     (
         day => $day:ty;

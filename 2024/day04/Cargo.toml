@@ -9,6 +9,7 @@ edition = "2021"
 nom.workspace = true
 helper.workspace = true
 divan.workspace = true
+memchr = "2.7.4"
 
 [[bench]]
 name = "benches"
