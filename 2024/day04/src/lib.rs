@@ -511,10 +511,10 @@ fn part2_reading(input: &str) -> u64 {
         let mut i = 0;
 
         let combinations = x86_64::_mm256_set_epi64x(
-            XMAS_COMBINATIONS[0].0 as i64,
-            XMAS_COMBINATIONS[1].0 as i64,
-            XMAS_COMBINATIONS[2].0 as i64,
             XMAS_COMBINATIONS[3].0 as i64,
+            XMAS_COMBINATIONS[2].0 as i64,
+            XMAS_COMBINATIONS[1].0 as i64,
+            XMAS_COMBINATIONS[0].0 as i64,
         );
 
         while i < end {
@@ -539,16 +539,13 @@ fn part2_reading(input: &str) -> u64 {
 
                 let eq = x86_64::_mm256_cmpeq_epi64(to_test, combinations);
 
-                let movmask = x86_64::_mm256_movemask_epi8(eq) as u32;
+                let movmask = x86_64::_mm256_movemask_epi8(eq);
                 if movmask != 0 {
-                    let masked_selected = u32::from_be_bytes([
-                        XMAS_COMBINATIONS[0].1,
-                        XMAS_COMBINATIONS[1].1,
-                        XMAS_COMBINATIONS[2].1,
-                        XMAS_COMBINATIONS[3].1,
-                    ]) & movmask;
-                    let check = masked_selected >> masked_selected.trailing_zeros();
-                    count += (check as u8 == ((chunk_bot >> 16) & 0xFF) as u8) as u64;
+                    let check =
+                        XMAS_COMBINATIONS[((movmask as u32).trailing_zeros() / 8) as usize].1;
+                    if check == ((chunk_bot >> 16) & 0xFF) as u8 {
+                        count += 1;
+                    }
                 }
 
                 i += 1;
