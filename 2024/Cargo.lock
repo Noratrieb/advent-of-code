@@ -152,6 +152,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "day05"
+version = "0.1.0"
+dependencies = [
+ "divan",
+ "helper",
+ "nom",
+]
+
+[[package]]
 name = "divan"
 version = "0.1.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
