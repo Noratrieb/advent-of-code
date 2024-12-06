@@ -17,6 +17,7 @@ helper::define_variants! {
         u64 => crate::part2_u64;
         simd => crate::part2_simd;
         reading => crate::part2_reading;
+        at_once => crate::part2_at_once;
     }
 }
 
@@ -546,6 +547,95 @@ fn part2_reading(input: &str) -> u64 {
                     if check == ((chunk_bot >> 16) & 0xFF) as u8 {
                         count += 1;
                     }
+                }
+
+                i += 1;
+            }
+            // skip end
+            i += 3;
+        }
+
+        count
+    }
+}
+
+fn part2_at_once(input: &str) -> u64 {
+    helper::only_x86_64_and! { "avx2" =>
+        input, do_avx else part2_u64
+    }
+
+    #[target_feature(enable = "avx2")]
+    unsafe fn do_avx(input: &str) -> u64 {
+        use std::arch::x86_64;
+
+        #[rustfmt::skip]
+        const XMAS_COMBINATIONS: &[u64] = &[
+            u64::from_le_bytes([
+                b'S',   0, b'M',
+                  0,  b'A', /*EMPTY*/
+                b'S',   0, b'M'
+            ]),
+            u64::from_le_bytes([
+                b'S',   0, b'S',
+                  0,  b'A', /*EMPTY*/
+                b'M',   0, b'M'
+            ]),
+            u64::from_le_bytes([
+                b'M',   0, b'M',
+                  0,  b'A', /*EMPTY*/
+                b'S',   0, b'S'
+            ]),
+            u64::from_le_bytes([
+                b'M',   0, b'S',
+                  0,  b'A', /*EMPTY*/
+                b'M',   0, b'S'
+            ]),
+        ];
+
+        let all = input.as_bytes();
+        let filled_line_len = input.lines().next().unwrap().len();
+        let full_line_len = filled_line_len + 1;
+
+        let chunk_count = filled_line_len - 2;
+
+        let end = all.len() - full_line_len * 2;
+
+        let mut count = 0;
+
+        let mut i = 0;
+
+        let combinations = x86_64::_mm256_set_epi64x(
+            XMAS_COMBINATIONS[3] as i64,
+            XMAS_COMBINATIONS[2] as i64,
+            XMAS_COMBINATIONS[1] as i64,
+            XMAS_COMBINATIONS[0] as i64,
+        );
+
+        while i < end {
+            for _ in 0..chunk_count {
+                let chunk_top = all.as_ptr().add(i).cast::<u32>().read_unaligned() as u64;
+                let chunk_mid = all
+                    .as_ptr()
+                    .add(i + full_line_len)
+                    .cast::<u32>()
+                    .read_unaligned() as u64;
+                let chunk_bot = all
+                    .as_ptr()
+                    .add(i + full_line_len * 2)
+                    .cast::<u32>()
+                    .read_unaligned() as u64;
+
+                let int = (chunk_top & 0xFF00FF) // 3 bytes
+                    | ((chunk_mid & 0x00FF00) << 24) // 2 bytes!
+                    | ((chunk_bot & 0xFF00FF) << (24 * 2 - 8)); // 3 bytes (-8 because the previous is just 2) 
+
+                let to_test = x86_64::_mm256_set1_epi64x(int as i64);
+
+                let eq = x86_64::_mm256_cmpeq_epi64(to_test, combinations);
+
+                let movmask = x86_64::_mm256_movemask_epi8(eq);
+                if movmask != 0 {
+                    count += 1;
                 }
 
                 i += 1;
