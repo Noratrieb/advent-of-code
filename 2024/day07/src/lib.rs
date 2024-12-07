@@ -16,7 +16,7 @@ helper::define_variants! {
         no_string_fmt => crate::part2_no_string_fmt,sample_count=1000;
         order => crate::part2_order,sample_count=1000;
         parsing => crate::part2_parsing,sample_count=5000;
-        parsing2 => crate::part2_parsing_2,sample_count=5000;
+        parsing2 => crate::part2_parsing2,sample_count=5000;
     }
 }
 
@@ -215,7 +215,7 @@ fn part2_parsing(input: &str) -> u64 {
     total
 }
 
-fn part2_parsing_2(input: &str) -> u64 {
+fn part2_parsing2(input: &str) -> u64 {
     let mut total = 0;
 
     let mut values = Vec::new();
@@ -235,7 +235,7 @@ fn part2_parsing_2(input: &str) -> u64 {
             result += next;
             i += 1;
         }
-        i += 2; // ' '
+        i += 2; // ': '
 
         while i < line.len() {
             let mut val = parse1(line[i]);
@@ -245,15 +245,19 @@ fn part2_parsing_2(input: &str) -> u64 {
                 val += parse1(line[i]);
                 i += 1;
 
-                if i < line.len()  && line[i] != b' ' {
+                if i < line.len() && line[i] != b' ' {
                     val *= 10;
                     val += parse1(line[i]);
                     i += 1;
+                    values.push((1000, val));
+                } else {
+                    values.push((100, val));
                 }
+            } else {
+                values.push((10, val));
             }
 
-            i += 1;
-            values.push((10_u64.pow(val.ilog10() + 1), val));
+            i += 1; // ' '
         }
 
         fn does_work(values: &[(u64, u64)], result: u64) -> bool {
