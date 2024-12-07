@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 
 use helper::{parse_unwrap, Day, IteratorExt, Variants};
 
@@ -49,30 +49,27 @@ fn part1(input: &str) -> u64 {
     }
 
     fn build_nodes(
+        nodes_lookup: &mut FxHashMap<u64, usize>,
+        edges: &mut Vec<Vec<usize>>,
         rules: impl Iterator<Item = (u64, u64)>,
-    ) -> (HashMap<u64, usize>, Vec<u64>, Vec<Vec<usize>>) {
-        let mut nodes_lookup = HashMap::new();
-        let mut nodes = Vec::new();
-        let mut edges = Vec::<Vec<_>>::new();
+    ) {
+        nodes_lookup.clear();
+        edges.clear();
         for (first, then) in rules {
             let first = *nodes_lookup.entry(first).or_insert_with(|| {
-                nodes.push(first);
-                edges.push(Vec::new());
-                nodes.len() - 1
+                edges.push(Vec::default());
+                edges.len() - 1
             });
             let then = *nodes_lookup.entry(then).or_insert_with(|| {
-                nodes.push(then);
-                edges.push(Vec::new());
-                nodes.len() - 1
+                edges.push(Vec::default());
+                edges.len() - 1
             });
             if !edges[first].contains(&then) {
                 edges[first].push(then);
             }
         }
 
-        assert_eq!(nodes_lookup.len(), nodes.len());
-        assert_eq!(nodes.len(), edges.len());
-        (nodes_lookup, nodes, edges)
+        assert_eq!(nodes_lookup.len(), edges.len());
     }
 
     /*
@@ -106,21 +103,14 @@ fn part1(input: &str) -> u64 {
     dbg!(all_sorted);
     */
 
-    fn must_be_before(edges: &[Vec<usize>], nodes: &[u64], before: usize, after: usize) -> bool {
-        if edges[before].contains(&after) {
-            return true;
-        }
-        for &child in &edges[before] {
-            if must_be_before(edges, nodes, child, after) {
-                return true;
-            }
-        }
-        false
-    }
+    let mut nodes_lookup = FxHashMap::default();
+    let mut edges = Vec::new();
 
     let mut result = 0;
     for update in updates {
-        let (nodes_lookup, nodes, edges) = build_nodes(
+        build_nodes(
+            &mut nodes_lookup,
+            &mut edges,
             rules
                 .iter()
                 .filter(|(a, b)| update.contains(&a) && update.contains(&b))
@@ -130,7 +120,7 @@ fn part1(input: &str) -> u64 {
         let mut is_bad = false;
         for ab in update.windows(2) {
             let (a, b) = (ab[0], ab[1]);
-            if must_be_before(&edges, &nodes, nodes_lookup[&b], nodes_lookup[&a]) {
+            if edges[nodes_lookup[&b]].contains(&nodes_lookup[&a]) {
                 is_bad = true;
                 break;
             }
