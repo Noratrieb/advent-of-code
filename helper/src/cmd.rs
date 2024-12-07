@@ -1,6 +1,6 @@
 use std::{borrow::Cow, process};
 
-use clap::{Arg, ArgMatches, Command};
+use clap::{value_parser, Arg, ArgMatches, Command};
 
 use crate::{Day, Variant};
 
@@ -49,10 +49,13 @@ fn create_variant_subcommands(mut part: Command, variants: &[Variant]) -> Comman
                 Command::new(v.name)
                     .about(format!("Run the {} variant", v.name))
                     .arg(Arg::new("input").short('i').long("input"))
+                    .arg(Arg::new("iter").long("iter").value_parser(value_parser!(usize)))
             })
             .for_each(|cmd| part = part.clone().subcommand(cmd));
     } else {
-        part = part.arg(Arg::new("input").short('i').long("input"));
+        part = part
+            .arg(Arg::new("input").short('i').long("input"))
+            .arg(Arg::new("iter").long("iter").value_parser(value_parser!(usize)));
     }
 
     part
@@ -63,21 +66,26 @@ fn dispatch_root_subcommand<D: Day>(
     variants: &[Variant],
     matches: &ArgMatches,
 ) -> ! {
+    let iter = matches.get_one::<usize>("iter").unwrap_or(&1);
+
     if variants.len() > 1 {
         let subcommand = matches.subcommand().unwrap();
         let variant = variants.iter().find(|v| v.name == subcommand.0).unwrap();
         let input = get_input(subcommand.1, default_input);
-        execute::<D>(variant, &input);
+        execute::<D>(variant, &input, *iter);
     } else {
         let input = get_input(matches, default_input);
-        execute::<D>(&variants[0], &input);
+        execute::<D>(&variants[0], &input, *iter);
     }
 }
 
-fn execute<D: Day>(variant: &Variant, input: &str) -> ! {
+fn execute<D: Day>(variant: &Variant, input: &str, iter: usize) -> ! {
     use std::io::Write;
     let input = D::pad_input(input);
-    let result = (variant.f)(&input);
+    let mut result = 0;
+    for _ in 0..iter {
+        result = (variant.f)(&input);
+    }
     let err = writeln!(std::io::stdout(), "{result}");
     if let Err(err) = err {
         if err.kind() != std::io::ErrorKind::BrokenPipe {
