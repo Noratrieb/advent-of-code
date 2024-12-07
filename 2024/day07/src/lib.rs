@@ -16,6 +16,7 @@ helper::define_variants! {
         no_string_fmt => crate::part2_no_string_fmt,sample_count=1000;
         order => crate::part2_order,sample_count=1000;
         parsing => crate::part2_parsing,sample_count=5000;
+        parsing2 => crate::part2_parsing_2,sample_count=5000;
     }
 }
 
@@ -187,6 +188,73 @@ fn part2_parsing(input: &str) -> u64 {
                 },
             )
         }));
+
+        fn does_work(values: &[(u64, u64)], result: u64) -> bool {
+            if values.len() == 1 {
+                return values[0].1 == result;
+            }
+
+            let (thousand, l) = *values.last().unwrap();
+            let next = &values[..(values.len() - 1)];
+
+            let concat_works = result % thousand == l;
+            let mul_works = result % l == 0;
+            let sub_works = l <= result;
+
+            // Concat is the least common, so doing it first helps remove the most possibilities.
+            false
+                || (concat_works && does_work(next, result / thousand))
+                || (mul_works && does_work(next, result / l))
+                || (sub_works && does_work(next, result - l))
+        }
+
+        if does_work(&values, result) {
+            total += result;
+        }
+    }
+    total
+}
+
+fn part2_parsing_2(input: &str) -> u64 {
+    let mut total = 0;
+
+    let mut values = Vec::new();
+
+    for line in input.lines() {
+        values.clear();
+
+        let parse1 = |a: u8| (a - b'0') as u64;
+
+        let line = line.as_bytes();
+        let mut i = 0;
+        let mut result = 0;
+
+        while line[i] != b':' {
+            let next = parse1(line[i]);
+            result *= 10;
+            result += next;
+            i += 1;
+        }
+        i += 2; // ' '
+
+        while i < line.len() {
+            let mut val = parse1(line[i]);
+            i += 1;
+            if i < line.len() && line[i] != b' ' {
+                val *= 10;
+                val += parse1(line[i]);
+                i += 1;
+
+                if i < line.len()  && line[i] != b' ' {
+                    val *= 10;
+                    val += parse1(line[i]);
+                    i += 1;
+                }
+            }
+
+            i += 1;
+            values.push((10_u64.pow(val.ilog10() + 1), val));
+        }
 
         fn does_work(values: &[(u64, u64)], result: u64) -> bool {
             if values.len() == 1 {
