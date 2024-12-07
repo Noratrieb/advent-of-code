@@ -3,3 +3,4 @@ perf.*
 aoc_cookie
 input_big.txt
 *.svg
+/x.rs
