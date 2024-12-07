@@ -175,16 +175,26 @@ fn part2_parsing(input: &str) -> u64 {
         values.clear();
         let (result, values_str) = line.split_once(": ").unwrap();
         let result = parse_unwrap(result);
-        values.extend(values_str.split(' ').map(|val| (val, parse_unwrap(val))));
+        values.extend(values_str.split(' ').map(str::as_bytes).map(|vals| {
+            let parse1 = |i| (vals[i] - b'0') as u64;
+            (
+                10_u64.pow(vals.len() as u32),
+                match vals.len() {
+                    1 => parse1(0),
+                    2 => parse1(0) * 10 + parse1(1),
+                    3 => parse1(0) * 100 + parse1(1) * 10 + parse1(2),
+                    _ => unreachable!(),
+                },
+            )
+        }));
 
-        fn does_work(values: &[(&str, u64)], result: u64) -> bool {
+        fn does_work(values: &[(u64, u64)], result: u64) -> bool {
             if values.len() == 1 {
                 return values[0].1 == result;
             }
 
-            let (l_str, l) = *values.last().unwrap();
+            let (thousand, l) = *values.last().unwrap();
             let next = &values[..(values.len() - 1)];
-            let thousand = 10_u64.pow(l_str.len() as u32);
 
             let concat_works = result % thousand == l;
             let mul_works = result % l == 0;
