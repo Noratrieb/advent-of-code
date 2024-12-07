@@ -1,5 +1,3 @@
-use rustc_hash::FxHashMap;
-
 use helper::{parse_unwrap, Day, IteratorExt, Variants};
 
 pub fn main() {
@@ -11,7 +9,7 @@ struct Day05;
 helper::define_variants! {
     day => crate::Day05;
     part1 {
-        basic => crate::part1;
+        basic => crate::part1, sample_count=1000;
     }
     part2 {
         basic => crate::part2;
@@ -29,6 +27,11 @@ impl Day for Day05 {
 }
 
 fn part1(input: &str) -> u64 {
+    struct Update {
+        values: Vec<u64>,
+        set: [bool; 100],
+    }
+
     let mut rules = Vec::new();
     let mut updates = Vec::new();
     let mut lines = input.lines();
@@ -44,32 +47,22 @@ fn part1(input: &str) -> u64 {
         rules.push((values[0], values[1]));
     }
     while let Some(line) = lines.next() {
-        let numbers = line.split(",").map(parse_unwrap).collect::<Vec<_>>();
-        updates.push(numbers);
+        let values = line.split(",").map(parse_unwrap).collect::<Vec<_>>();
+        let mut set = [false; 100];
+        for value in &values {
+            set[*value as usize] = true;
+        }
+        updates.push(Update { values, set });
     }
 
-    fn build_nodes(
-        nodes_lookup: &mut FxHashMap<u64, usize>,
-        edges: &mut Vec<Vec<usize>>,
-        rules: impl Iterator<Item = (u64, u64)>,
-    ) {
-        nodes_lookup.clear();
+    fn build_nodes(edges: &mut Vec<[bool; 100]>, rules: impl Iterator<Item = (u64, u64)>) {
         edges.clear();
-        for (first, then) in rules {
-            let first = *nodes_lookup.entry(first).or_insert_with(|| {
-                edges.push(Vec::default());
-                edges.len() - 1
-            });
-            let then = *nodes_lookup.entry(then).or_insert_with(|| {
-                edges.push(Vec::default());
-                edges.len() - 1
-            });
-            if !edges[first].contains(&then) {
-                edges[first].push(then);
-            }
-        }
 
-        assert_eq!(nodes_lookup.len(), edges.len());
+        edges.resize(100, [false; 100]);
+
+        for (first, then) in rules {
+            edges[first as usize][then as usize] = true;
+        }
     }
 
     /*
@@ -103,30 +96,28 @@ fn part1(input: &str) -> u64 {
     dbg!(all_sorted);
     */
 
-    let mut nodes_lookup = FxHashMap::default();
     let mut edges = Vec::new();
 
     let mut result = 0;
     for update in updates {
         build_nodes(
-            &mut nodes_lookup,
             &mut edges,
             rules
                 .iter()
-                .filter(|(a, b)| update.contains(&a) && update.contains(&b))
+                .filter(|(a, b)| update.set[*a as usize] && update.set[*b as usize])
                 .copied(),
         );
 
         let mut is_bad = false;
-        for ab in update.windows(2) {
+        for ab in update.values.windows(2) {
             let (a, b) = (ab[0], ab[1]);
-            if edges[nodes_lookup[&b]].contains(&nodes_lookup[&a]) {
+            if edges[b as usize][a as usize] {
                 is_bad = true;
                 break;
             }
         }
         if !is_bad {
-            result += update[update.len() / 2];
+            result += update.values[update.values.len() / 2];
         }
     }
 
