@@ -10,6 +10,7 @@ nom.workspace = true
 helper.workspace = true
 divan.workspace = true
 smallvec = "1.13.2"
+num-integer = "0.1.46"
 
 [[bench]]
 name = "benches"

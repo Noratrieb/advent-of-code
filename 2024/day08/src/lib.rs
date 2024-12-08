@@ -244,7 +244,7 @@ fn part1_arrayvec(input: &str) -> u64 {
         }
     }
     impl<'a> IntoIterator for &'a Arrayvec {
-        type IntoIter = std::slice::Iter<'a,Coods>;
+        type IntoIter = std::slice::Iter<'a, Coods>;
         type Item = &'a Coods;
         fn into_iter(self) -> Self::IntoIter {
             unsafe { self.elems.get_unchecked(0..self.len).iter() }
@@ -312,8 +312,79 @@ fn part1_arrayvec(input: &str) -> u64 {
         .count() as u64
 }
 
-fn part2(_input: &str) -> u64 {
-    0
+fn part2(input: &str) -> u64 {
+    let mut all_antennas = [const { vec![] }; 256];
+
+    let mut width = 0;
+
+    let mut row = 0;
+    let mut col = 0;
+    for cell in input.bytes() {
+        if cell == b'\n' {
+            row += 1;
+            width = col;
+            col = 0;
+        } else if cell != b'.' {
+            all_antennas[cell as usize].push((col as i64, row as i64));
+            col += 1;
+        } else {
+            col += 1;
+        }
+    }
+
+    let height = row;
+
+    let mut is_antinode = vec![false; width * height];
+    let all_antennas = &all_antennas[b'0' as usize..b'z' as usize];
+
+    for antennas in all_antennas {
+        for (i, &a) in antennas.iter().enumerate() {
+            for (j, &b) in antennas.iter().enumerate() {
+                if i >= j {
+                    continue;
+                }
+
+                let mut diff = (a.0 - b.0, a.1 - b.1);
+
+                loop {
+                    let gcd = num_integer::gcd(diff.0, diff.1);
+                    if gcd == 1 {
+                        break;
+                    }
+                    diff = (diff.0 / gcd, diff.1 / gcd);
+                }
+
+                let mut antinode = a;
+                while (0..(width as i64)).contains(&antinode.0)
+                    && (0..(height as i64)).contains(&antinode.1)
+                {
+                    unsafe {
+                        *is_antinode.get_unchecked_mut(
+                            (antinode.0 as usize * width) + antinode.1 as usize,
+                        ) = true;
+                    }
+                    antinode = (antinode.0 + diff.0, antinode.1 + diff.1);
+                }
+
+                let mut antinode = a;
+                while (0..(width as i64)).contains(&antinode.0)
+                    && (0..(height as i64)).contains(&antinode.1)
+                {
+                    unsafe {
+                        *is_antinode.get_unchecked_mut(
+                            (antinode.0 as usize * width) + antinode.1 as usize,
+                        ) = true;
+                    }
+                    antinode = (antinode.0 - diff.0, antinode.1 - diff.1);
+                }
+            }
+        }
+    }
+
+    is_antinode
+        .iter()
+        .filter(|is_antinode| **is_antinode)
+        .count() as u64
 }
 
 helper::tests! {
@@ -324,7 +395,7 @@ helper::tests! {
     }
     part2 {
         small => 34;
-        default => 0;
+        default => 949;
     }
 }
 helper::benchmarks! {}
