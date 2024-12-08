@@ -344,15 +344,8 @@ fn part2(input: &str) -> u64 {
                     continue;
                 }
 
-                let mut diff = (a.0 - b.0, a.1 - b.1);
-
-                loop {
-                    let gcd = num_integer::gcd(diff.0, diff.1);
-                    if gcd == 1 {
-                        break;
-                    }
-                    diff = (diff.0 / gcd, diff.1 / gcd);
-                }
+                // diff is always reduced already, no reduction is needed.
+                let diff = (a.0 - b.0, a.1 - b.1);
 
                 let mut antinode = a;
                 while (0..(width as i64)).contains(&antinode.0)
