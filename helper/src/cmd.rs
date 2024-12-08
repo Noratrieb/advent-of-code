@@ -40,6 +40,11 @@ pub fn main<D: Day>(default_input: &str) -> ! {
 }
 
 fn create_variant_subcommands(mut part: Command, variants: &[Variant]) -> Command {
+    let iter_arg = Arg::new("iter")
+        .long("iter")
+        .value_parser(value_parser!(usize))
+        .default_value("1");
+
     if variants.len() > 1 {
         part = part.subcommand_required(true);
 
@@ -49,13 +54,13 @@ fn create_variant_subcommands(mut part: Command, variants: &[Variant]) -> Comman
                 Command::new(v.name)
                     .about(format!("Run the {} variant", v.name))
                     .arg(Arg::new("input").short('i').long("input"))
-                    .arg(Arg::new("iter").long("iter").value_parser(value_parser!(usize)))
+                    .arg(iter_arg.clone())
             })
             .for_each(|cmd| part = part.clone().subcommand(cmd));
     } else {
         part = part
             .arg(Arg::new("input").short('i').long("input"))
-            .arg(Arg::new("iter").long("iter").value_parser(value_parser!(usize)));
+            .arg(iter_arg);
     }
 
     part
@@ -66,14 +71,14 @@ fn dispatch_root_subcommand<D: Day>(
     variants: &[Variant],
     matches: &ArgMatches,
 ) -> ! {
-    let iter = matches.get_one::<usize>("iter").unwrap_or(&1);
-
     if variants.len() > 1 {
-        let subcommand = matches.subcommand().unwrap();
-        let variant = variants.iter().find(|v| v.name == subcommand.0).unwrap();
-        let input = get_input(subcommand.1, default_input);
+        let (subcommand, matches) = matches.subcommand().unwrap();
+        let iter = matches.get_one::<usize>("iter").unwrap();
+        let variant = variants.iter().find(|v| v.name == subcommand).unwrap();
+        let input = get_input(matches, default_input);
         execute::<D>(variant, &input, *iter);
     } else {
+        let iter = matches.get_one::<usize>("iter").unwrap();
         let input = get_input(matches, default_input);
         execute::<D>(&variants[0], &input, *iter);
     }
