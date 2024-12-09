@@ -46,23 +46,31 @@ impl Variant {
     }
 }
 
-pub fn test_part1<D: Day>(inputs: &[(&str, u64)]) {
+pub fn test_part1<D: Day>(inputs: &[(&str, &str, u64)]) {
     for variant in D::part1().variants {
         for input in inputs {
-            let actual = (variant.f)(input.0);
-            if actual != input.1 {
-                panic!("failed: {}: {actual} != {}", variant.name, input.1);
+            let (path, input, expected) = *input;
+            let actual = (variant.f)(input);
+            if actual != expected {
+                panic!(
+                    "failed: {}: {}: {} != {}",
+                    path, variant.name, actual, expected
+                );
             }
         }
     }
 }
 
-pub fn test_part2<D: Day>(inputs: &[(&str, u64)]) {
+pub fn test_part2<D: Day>(inputs: &[(&str, &str, u64)]) {
     for variant in D::part2().variants {
         for input in inputs {
-            let actual = (variant.f)(input.0);
-            if actual != input.1 {
-                panic!("failed: {}: {actual} != {}", variant.name, input.1);
+            let (path, input, expected) = *input;
+            let actual = (variant.f)(input);
+            if actual != expected {
+                panic!(
+                    "failed: {}: {}: {} != {}",
+                    path, variant.name, actual, expected
+                );
             }
         }
     }
@@ -209,7 +217,7 @@ macro_rules! tests {
             fn part1() {
                 helper::test_part1::<super::$day>(&[
                     $(
-                        (include_str!($file1), $p1),
+                        ($file1, include_str!($file1), $p1),
                     )*
                 ]);
             }
@@ -218,7 +226,7 @@ macro_rules! tests {
             fn part2() {
                 helper::test_part2::<super::$day>(&[
                     $(
-                        (include_str!($file2), $p2),
+                        ($file2, include_str!($file2), $p2),
                     )*
                 ]);
             }
