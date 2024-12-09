@@ -11,10 +11,10 @@ struct Day09;
 helper::define_variants! {
     day => crate::Day09;
     part1 {
-        basic => crate::part1;
+        basic => crate::part1,sample_count=1000;
     }
     part2 {
-        basic => crate::part2;
+        basic => crate::part2,sample_count=1;
     }
 }
 
@@ -33,7 +33,7 @@ fn part1(input: &str) -> u64 {
 
     let mut blocks = Vec::new();
     let mut is_file = true;
-    let mut id = 0;
+    let mut id = 0_u16;
     for b in input.bytes() {
         debug_assert!(b.is_ascii_digit());
         let len = (b - b'0') as usize;
@@ -73,8 +73,89 @@ fn part1(input: &str) -> u64 {
         .sum()
 }
 
-fn part2(_input: &str) -> u64 {
-    0
+fn part2(input: &str) -> u64 {
+    #[derive(Clone, Copy, Debug)]
+    enum Block {
+        File { id: u16, size: u8 },
+        Space { space_here: u8 },
+    }
+    #[expect(dead_code)]
+    fn print_blocks(blocks: &[Block]) {
+        for b in blocks {
+            match b {
+                Block::Space { .. } => eprint!("."),
+                Block::File { id, .. } => eprint!("{}", id),
+            }
+        }
+        eprintln!();
+    }
+
+    let input = &input[0..input.len() - 1];
+
+    let mut blocks = Vec::<Block>::new();
+    let mut is_file = true;
+    let mut id = 0_u16;
+    for b in input.bytes() {
+        debug_assert!(b.is_ascii_digit());
+        let len = (b - b'0') as usize;
+        if is_file {
+            blocks.extend(iter::repeat_n(
+                Block::File {
+                    id,
+                    size: len as u8,
+                },
+                len,
+            ));
+            id += 1;
+        } else {
+            for i in (1..=len).rev() {
+                blocks.push(Block::Space {
+                    space_here: i as u8,
+                });
+            }
+        }
+        is_file = !is_file;
+    }
+
+    let mut i = blocks.len() - 1;
+
+    while i > 0 {
+        match blocks[i] {
+            Block::File { id: _, size } => {
+                let end = i + 1;
+
+                // note: only check to the left.
+                let insert_position = blocks[..i].iter().position(|b| match b {
+                    Block::Space { space_here } => *space_here >= size,
+                    _ => false,
+                });
+                let size_usize = size as usize;
+                match insert_position {
+                    Some(insert_position) => {
+                        blocks.copy_within((end - size_usize)..end, insert_position);
+                        blocks[(end - size_usize)..][..size_usize]
+                            .fill(Block::Space { space_here: 0 }); // 0 does not matter
+                        i = i.saturating_sub(size_usize);
+                    }
+                    None => {
+                        i = i.saturating_sub(size_usize);
+                    }
+                }
+            }
+            Block::Space { .. } => {
+                i = i.saturating_sub(1);
+            }
+        }
+    }
+
+    blocks
+        .iter()
+        .enumerate()
+        .filter_map(|(i, tile)| match tile {
+            Block::File { id, .. } => Some(*id as u64 * i as u64),
+            _ => None,
+        })
+        .sum()
 }
 
 helper::tests! {
@@ -84,7 +165,7 @@ helper::tests! {
         default => 6432869891895;
     }
     part2 {
-        small => 0;
+        small => 2858;
         default => 0;
     }
 }
