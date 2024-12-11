@@ -13,7 +13,7 @@ helper::define_variants! {
         basic => crate::part1;
     }
     part2 {
-        basic => crate::part2,sample_count=10;
+        basic => crate::part2,sample_count=100;
     }
 }
 
