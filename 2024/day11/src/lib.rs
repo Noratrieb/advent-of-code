@@ -125,7 +125,7 @@ helper::tests! {
     }
     part2 {
         small => 22;
-        default => 0;
+        default => 241651071960597;
     }
 }
 helper::benchmarks! {}
