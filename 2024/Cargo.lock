@@ -199,6 +199,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "day10"
+version = "0.1.0"
+dependencies = [
+ "divan",
+ "helper",
+ "nom",
+]
+
+[[package]]
 name = "day11"
 version = "0.1.0"
 dependencies = [
@@ -206,6 +215,34 @@ dependencies = [
  "helper",
  "nom",
  "rustc-hash",
+]
+
+[[package]]
+name = "day12"
+version = "0.1.0"
+dependencies = [
+ "divan",
+ "helper",
+ "nom",
+ "rustc-hash",
+]
+
+[[package]]
+name = "day13"
+version = "0.1.0"
+dependencies = [
+ "divan",
+ "helper",
+ "nom",
+]
+
+[[package]]
+name = "day24"
+version = "0.1.0"
+dependencies = [
+ "divan",
+ "helper",
+ "nom",
 ]
 
 [[package]]
