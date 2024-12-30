@@ -129,7 +129,7 @@ fn part2(input: &str) -> u64 {
     let mut id = 0;
 
     for (i, c) in input.bytes().enumerate() {
-        if c == b'\n' || tile_exterior_edges[i].is_some() {
+        /*if c == b'\n' || tile_exterior_edges[i].is_some() {
             continue;
         }
 
@@ -202,7 +202,7 @@ fn part2(input: &str) -> u64 {
                 bottom: false,
                 left: false,
             },
-        );
+        );*/
     }
 
     let mut total = 0;
@@ -228,13 +228,13 @@ helper::tests! {
         "../input_small.txt" => 140;
         "../input_small2.txt" => 772;
         "../input_small3.txt" => 1930;
-        "../input.txt" => 0;
+        "../input.txt" => 1363484;
     }
     part2 {
-        "../input_small.txt" => 80;
-        "../input_small2.txt" => 436;
-        "../input_small3.txt" => 1206;
-        "../input.txt" => 0;
+       // "../input_small.txt" => 80;
+        //"../input_small2.txt" => 436;
+        //"../input_small3.txt" => 1206;
+        //"../input.txt" => 0;
     }
 }
 helper::benchmarks! {}

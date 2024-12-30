@@ -2,7 +2,7 @@ use std::{borrow::Cow, process};
 
 use clap::{value_parser, Arg, ArgMatches, Command};
 
-use crate::{Day, Variant};
+use crate::{Answer, Day, Variant};
 
 pub fn main<D: Day>(default_input: &str) -> ! {
     let mut part1 = Command::new("part1").about("Runs the part 1 program");
@@ -87,7 +87,7 @@ fn dispatch_root_subcommand<D: Day>(
 fn execute<D: Day>(variant: &Variant, input: &str, iter: usize) -> ! {
     use std::io::Write;
     let input = D::pad_input(input);
-    let mut result = 0;
+    let mut result = Answer::U64(0);
     for _ in 0..iter {
         result = (variant.f)(&input);
     }

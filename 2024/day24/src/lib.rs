@@ -121,7 +121,7 @@ fn part1(input: &str) -> u64 {
     result
 }
 
-fn part2(input: &str) -> u64 {
+fn part2(input: &str) -> String {
     /*
     Adding two binary numbers
 
@@ -162,6 +162,16 @@ fn part2(input: &str) -> u64 {
         Y(u8),
         Z(u8),
         Intermediate(&'a str),
+    }
+    impl std::fmt::Display for Wire<'_> {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            match self {
+                Wire::X(n) => write!(f, "x{n:>02}"),
+                Wire::Y(n) => write!(f, "y{n:>02}"),
+                Wire::Z(n) => write!(f, "z{n:>02}"),
+                Wire::Intermediate(name) => f.write_str(name),
+            }
+        }
     }
     #[derive(Debug, Clone, Copy)]
     enum Value {
@@ -237,38 +247,35 @@ fn part2(input: &str) -> u64 {
         X(u8),
         Y(u8),
     }
-
-    fn check_match(
-        wire_names: &[Wire<'_>],
-        wires: &[Value],
-        check_cache: &mut HashMap<(usize, Pattern), Result<(), (usize, Pattern)>>,
-        wire: usize,
-        pattern: &Pattern,
-    ) -> Result<(), (usize, Pattern)> {
-        let key = (wire, pattern.clone());
-        if let Some(cache_value) = check_cache.get(&key) {
-            return cache_value.clone();
-        }
-        let value = check_match_uncached(wire_names, wires, check_cache, wire, pattern);
-        let prev_cache_entry = check_cache.insert(key, value.clone());
-        assert!(prev_cache_entry.is_none());
-        value
+    #[derive(Debug, PartialEq)]
+    enum MatchResult {
+        Ok,
+        Partial { errors: Vec<(usize, Pattern)> },
+        Error(usize, Pattern),
     }
-    fn check_match_uncached(
+    impl MatchResult {
+        fn has_root(&self) -> bool {
+            matches!(self, MatchResult::Ok | MatchResult::Partial { .. })
+        }
+    }
+
+    fn match_subgraph(
         wire_names: &[Wire<'_>],
         wires: &[Value],
-        check_cache: &mut HashMap<(usize, Pattern), Result<(), (usize, Pattern)>>,
         wire: usize,
         pattern: &Pattern,
-    ) -> Result<(), (usize, Pattern)> {
-        //eprintln!("{:?} matches {:?}", wire_names[wire], pattern);
-
+    ) -> MatchResult {
+        // eprintln!("{:?} matches {:?}", wire_names[wire], pattern);
         match (wire_names[wire], pattern) {
             (_, Pattern::Op(_, _, _)) => {}
-            (Wire::X(x_value), Pattern::X(x_pattern)) if x_value == *x_pattern => return Ok(()),
-            (Wire::Y(y_value), Pattern::Y(y_pattern)) if y_value == *y_pattern => return Ok(()),
+            (Wire::X(x_value), Pattern::X(x_pattern)) if x_value == *x_pattern => {
+                return MatchResult::Ok
+            }
+            (Wire::Y(y_value), Pattern::Y(y_pattern)) if y_value == *y_pattern => {
+                return MatchResult::Ok
+            }
             _ => {
-                return Err((wire, pattern.clone()));
+                return MatchResult::Error(wire, pattern.clone());
             }
         }
 
@@ -277,33 +284,76 @@ fn part2(input: &str) -> u64 {
                 Value::Op(op_value, lhs_wire, rhs_wire),
                 Pattern::Op(op_pattern, pattern1, pattern2),
             ) if op_value == *op_pattern => {
-                let lhs_1 = check_match(wire_names, wires, check_cache, lhs_wire, &pattern1);
-                let rhs_2 = check_match(wire_names, wires, check_cache, rhs_wire, &pattern2);
-                if lhs_1.is_ok() && rhs_2.is_ok() {
-                    return Ok(());
+                let lhs_1 = match_subgraph(wire_names, wires, lhs_wire, &pattern1);
+                let rhs_1 = match_subgraph(wire_names, wires, rhs_wire, &pattern2);
+                if lhs_1 == MatchResult::Ok && rhs_1 == MatchResult::Ok {
+                    return MatchResult::Ok;
                 }
 
-                let lhs_2 = check_match(wire_names, wires, check_cache, lhs_wire, &pattern2);
-                let rhs_1 = check_match(wire_names, wires, check_cache, rhs_wire, &pattern1);
-                if lhs_2.is_ok() && rhs_1.is_ok() {
-                    return Ok(());
+                let lhs_2 = match_subgraph(wire_names, wires, lhs_wire, &pattern2);
+                let rhs_2 = match_subgraph(wire_names, wires, rhs_wire, &pattern1);
+                if lhs_2 == MatchResult::Ok && rhs_2 == MatchResult::Ok {
+                    return MatchResult::Ok;
                 }
 
-                // If both inputs are wrong, this node is likely the culprit.
-                // If only one input is wrong, this input is the culprit.
-                if lhs_1.is_ok() {
-                    rhs_2
-                } else if rhs_2.is_ok() {
-                    lhs_1
-                } else if lhs_2.is_ok() {
-                    rhs_1
-                } else if rhs_1.is_ok() {
-                    lhs_2
+                // There was an error *somewhere*. Let's dig deeper.
+                // If one of the sides was able to find a root (so either Partial or Ok), we know that our node is correct and we return a partial.
+                // If neither side was able to find a root (so Error), we Error too.
+
+                // One of the two scenarios must be an error, surely. They can't both partially match, right?
+                assert!(
+                    matches!(lhs_1, MatchResult::Error { .. })
+                        || matches!(lhs_2, MatchResult::Error { .. })
+                );
+                assert!(
+                    matches!(rhs_1, MatchResult::Error { .. })
+                        || matches!(rhs_2, MatchResult::Error { .. }),
+                );
+
+                let (lhs, rhs) = if lhs_1.has_root() || rhs_1.has_root() {
+                    (lhs_1, rhs_1)
+                } else if lhs_2.has_root() || rhs_2.has_root() {
+                    (lhs_2, rhs_2)
                 } else {
-                    Err((wire, pattern.clone()))
+                    return MatchResult::Error(wire, pattern.clone());
+                };
+
+                match (lhs, rhs) {
+                    // Ok,Ok => Ok
+                    (MatchResult::Ok, MatchResult::Ok) => unreachable!(),
+                    // Ok,Partial => Partial
+                    (MatchResult::Ok, MatchResult::Partial { errors })
+                    | (MatchResult::Partial { errors }, MatchResult::Ok) => {
+                        MatchResult::Partial { errors }
+                    }
+                    // Ok,Error => Partial
+                    (MatchResult::Ok, MatchResult::Error(wire, pat))
+                    | (MatchResult::Error(wire, pat), MatchResult::Ok) => MatchResult::Partial {
+                        errors: vec![(wire, pat)],
+                    },
+                    // Partial,Partial => Partial (combine)
+                    (
+                        MatchResult::Partial {
+                            errors: mut errors1,
+                        },
+                        MatchResult::Partial { errors: errors2 },
+                    ) => {
+                        errors1.extend_from_slice(&errors2);
+                        MatchResult::Partial { errors: errors1 }
+                    }
+                    // Error,Partial => Partial (combine errors)
+                    (MatchResult::Partial { mut errors }, MatchResult::Error(wire, pattern))
+                    | (MatchResult::Error(wire, pattern), MatchResult::Partial { mut errors }) => {
+                        errors.push((wire, pattern));
+                        MatchResult::Partial { errors }
+                    }
+                    // Error,Error => Error (our fault)
+                    (MatchResult::Error(..), MatchResult::Error(..)) => {
+                        unreachable!("handled above")
+                    }
                 }
             }
-            _ => Err((wire, pattern.clone())),
+            _ => MatchResult::Error(wire, pattern.clone()),
         }
     }
 
@@ -311,7 +361,7 @@ fn part2(input: &str) -> u64 {
 
     let mut prev_carry_pat = Pattern::X(255); // dummy
 
-    let mut check_cache = HashMap::new();
+    // let mut check_cache = HashMap::new();
 
     for z_wire in zs {
         let Wire::Z(pos) = wire_names[z_wire] else {
@@ -357,28 +407,41 @@ fn part2(input: &str) -> u64 {
         };
         prev_carry_pat = carry_pat;
 
-        if let Err((incorrect_wire, pat)) =
-            check_match(&wire_names, &wires, &mut check_cache, z_wire, &z_pat)
-        {
-            eprintln!("error: {:?}", wire_names[incorrect_wire]);
-            incorrect_gates.insert((incorrect_wire, pat));
+        match match_subgraph(&wire_names, &wires, z_wire, &z_pat) {
+            MatchResult::Ok => {}
+            MatchResult::Partial { errors } => {
+                for (incorrect_wire, pat) in errors {
+                    eprintln!("error: {:?}", wire_names[incorrect_wire]);
+                    incorrect_gates.insert((incorrect_wire, pat));
+                }
+            }
+            MatchResult::Error(incorrect_wire, pat) => {
+                eprintln!("error (root): {:?}", wire_names[incorrect_wire]);
+                incorrect_gates.insert((incorrect_wire, pat));
+            }
         }
     }
 
     dbg!(incorrect_gates.len());
 
+    let mut incorrect_wire_names = Vec::new();
+
     for (wire, pat) in &incorrect_gates {
         eprintln!("{:?}", wire_names[*wire]);
 
         let pair = incorrect_gates.iter().find(|(other_wire, other_pat)| {
-            check_match(&wire_names, &wires, &mut check_cache, *wire, other_pat).is_ok()
+            match_subgraph(&wire_names, &wires, *wire, other_pat) == MatchResult::Ok
+                && match_subgraph(&wire_names, &wires, *other_wire, pat) == MatchResult::Ok
         });
         if let Some(pair) = pair {
             eprintln!(" pairs with {:?}", wire_names[pair.0]);
+
+            incorrect_wire_names.push(wire_names[pair.0].to_string());
         }
     }
 
-    0
+    incorrect_wire_names.sort();
+    incorrect_wire_names.join(",")
 }
 
 helper::tests! {
@@ -388,7 +451,6 @@ helper::tests! {
         default => 41324968993486;
     }
     part2 {
-        small => 0;
         default => 0;
     }
 }
